@@ -2,9 +2,7 @@
 
 # OntoGraph Package
 
-- [ ] TODO: Add badges to your project.
-
-[![Tests](https://img.shields.io/github/actions/workflow/status/saezlab/ontograph/test.yml?branch=master)](https://github.com/saezlab/ontograph/actions/workflows/test.yml)
+[![Unit Tests](https://img.shields.io/github/actions/workflow/status/saezlab/ontograph/ci-testing-unit.yml?branch=master)](https://github.com/saezlab/ontograph/actions/workflows/ci-testing-unit.yml)
 [![Docs](https://img.shields.io/badge/docs-MkDocs-blue)](https://saezlab.github.io/ontograph/)
 ![Pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)
 ![PyPI](https://img.shields.io/pypi/v/ontograph)
