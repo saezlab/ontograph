@@ -23,4 +23,4 @@ __pycache__/
 /data/
 
 notebooks/cache/*
-.venv/*
+/.venv/*
