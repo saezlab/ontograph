@@ -28,7 +28,9 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Bio-Informatics"
 ]
 dependencies = [
-    "toml"
+    "toml",
+    "pronto",
+    "pooch"
 ]
 description = "A lightweight Python package for loading, representing, and efficiently querying biological ontologies as graph structures."
 license = "MIT"
@@ -48,7 +50,8 @@ dev = [
     "distlib",
     "pre-commit",
     "bump2version",
-    "twine"
+    "twine",
+    "ipykernel"
 ]
 docs = [
     "mkdocs-material>=9.6.14",
