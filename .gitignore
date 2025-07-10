@@ -22,5 +22,5 @@ __pycache__/
 /.cache/
 /data/
 
-notebooks/cache/*
-/.venv/*
+notebooks/cache/
+.venv/
