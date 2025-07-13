@@ -30,7 +30,8 @@ classifiers = [
 dependencies = [
     "toml",
     "pronto",
-    "pooch"
+    "pooch[progress]",
+    "pyyaml"
 ]
 description = "A lightweight Python package for loading, representing, and efficiently querying biological ontologies as graph structures."
 license = "MIT"
@@ -38,9 +39,6 @@ maintainers = [
     {name = "Edwin Carreño", email = "edwin.carreno@iwr.uni-heidelberg.de"}
 ]
 name = "ontograph"
-# packages = [
-# { include = "ontograph" }
-# ]
 readme = "README.md"
 requires-python = ">=3.10"
 version = "0.0.1"
@@ -70,6 +68,9 @@ tests = [
     "codecov-cli>=10.2.0",
     "diff_cover",
     "ruff"
+]
+semantic = [
+    "rdflib>=6.0.0"
 ]
 
 [project.urls]

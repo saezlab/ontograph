@@ -187,7 +187,7 @@ class OBOFoundryRegistry:
 if __name__ == "__main__":
 
     # Define the path to store the registry
-    path = Path("./")
+    path = Path("./data/out")
 
     # Create object registry
     obo_reg = OBOFoundryRegistry(cache_dir=path)
