@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Protocol
 
 
-class GraphBackend(ABC):
+class GraphBackendPort(ABC):
     """Port defining graph operations interface."""
 
     @abstractmethod
@@ -34,3 +34,11 @@ class GraphBackend(ABC):
     def get_subgraph(self, terms: List[str]) -> Any:
         """Get subgraph containing given terms."""
         pass
+
+
+class OntologyProtocol(Protocol):
+    """Protocol defining required Ontology interface."""
+
+    @property
+    def metadata(self) -> Any: ...
+    def __getitem__(self, key: str) -> Any: ...

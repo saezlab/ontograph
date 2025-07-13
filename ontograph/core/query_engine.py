@@ -1,12 +1,12 @@
 from typing import List
 
-from ontograph.ports.graph_backend import GraphBackend
+from ontograph.ports.graph_backend_port import GraphBackendPort
 
 
 class QueryEngine:
     """Core domain service for querying the ontology graph."""
 
-    def __init__(self, graph: GraphBackend):
+    def __init__(self, graph: GraphBackendPort):
         """Initialize with a graph backend."""
         self.graph = graph
 

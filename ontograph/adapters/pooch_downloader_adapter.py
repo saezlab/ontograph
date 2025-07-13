@@ -3,19 +3,26 @@ from typing import Dict, List, Optional
 
 from pooch import retrieve
 
-from ontograph.adapters.obo_foundry_registry import OBOFoundryRegistry
-from ontograph.ports.downloader import AbstractDownloader
+from ontograph.ports.downloader_port import DownloaderPort
+from ontograph.ports.ontology_registry_port import OntologyRegistryPort
 
 
-class PoochDownloader(AbstractDownloader):
+class PoochDownloaderAdapter(DownloaderPort):
     """
     Concrete downloader using Pooch for caching ontology files.
     """
 
-    def __init__(self, cache_dir: Path = Path.home() / ".ontograph_cache"):
+    def __init__(self, cache_dir: Path, registry: OntologyRegistryPort):
+        """
+        Initialize the downloader adapter.
+
+        Args:
+            cache_dir (Path): Directory for caching downloaded files
+            registry (OntologyRegistryPort): Registry port for resolving download URLs
+        """
         self.cache_dir = cache_dir
         self.cache_dir.mkdir(parents=True, exist_ok=True)
-        self.registry = OBOFoundryRegistry(cache_dir)
+        self.registry = registry
 
     def _get_download_url(self, name_id: str, format: str) -> Optional[str]:
         """Get download URL from registry."""
@@ -37,6 +44,7 @@ class PoochDownloader(AbstractDownloader):
             known_hash=None,  # Could later integrate SHA256 checksums
             fname=filename,
             path=self.cache_dir,
+            progressbar=True,
         )
         return Path(local_file)
 
@@ -47,15 +55,18 @@ class PoochDownloader(AbstractDownloader):
         Args:
             resources (List[Dict[str, str]]): List of dictionaries containing:
                 - name_id: The ontology identifier
-                - format: The file format (e.g., 'obo', 'owl')
+                - format: The file format (e.g., 'obo', 'owl'). Defaults to 'obo' if not specified.
 
         Returns:
             Dict[str, Path]: Dictionary mapping ontology IDs to their cached paths
 
         Raises:
-            ValueError: If an ontology is not found or format is not supported
+            ValueError: If resources list is empty, an ontology is not found, or format is not supported
             KeyError: If required keys are missing in the resource dictionary
         """
+        if not resources:
+            raise ValueError("Resources list for batch download is empty.")
+
         results = {}
 
         for resource in resources:
@@ -79,35 +90,36 @@ class PoochDownloader(AbstractDownloader):
 
         return results
 
-    def list_available_ontologies(self) -> List[Dict[str, str]]:
-        """
-        Get list of available ontologies from the registry.
 
-        Returns:
-            List[Dict[str, str]]: List of available ontologies with their metadata
-        """
-        return self.registry.list_available_ontologies()
+if __name__ == "__main__":
+    from ontograph.adapters.obo_registry_adapter import OBORegistryAdapter
 
-    def get_available_formats(self, ontology_id: str) -> List[str]:
-        """
-        Get available formats for an ontology.
+    # Defines the cache directory
+    cache_dir = Path("./data/out")
 
-        Args:
-            ontology_id: The ontology identifier
+    # Creates a registry object (real implementation OBORegistryAdapter)
+    registry = OBORegistryAdapter(cache_dir=cache_dir)
+    registry.load_registry()
 
-        Returns:
-            List[str]: List of available formats
-        """
-        return self.registry.get_available_formats(ontology_id)
+    # Creates a downloader object
+    downloader = PoochDownloaderAdapter(cache_dir=cache_dir, registry=registry)
 
-    def get_ontology_metadata(self, ontology_id: str) -> Optional[Dict]:
-        """
-        Get detailed metadata for an ontology.
+    ## Example 1. Download a single ontology file from the registry
+    ontology_id = "ado"
+    format = "owl"
 
-        Args:
-            ontology_id: The ontology identifier
+    # Extract the url from the registry
+    url = registry.get_download_url(ontology_id, format)
 
-        Returns:
-            Optional[Dict]: The ontology metadata or None if not found
-        """
-        return self.registry.get_ontology_metadata(ontology_id)
+    if url:
+        # Downloads the file
+        local_path = downloader.fetch(url=url, filename=f"{ontology_id}.{format}")
+        print(f"Downloaded {ontology_id}.{format} to: {local_path}")
+
+    ## Example 2. Batch download
+    resources = [
+        {"name_id": "chebi", "format": "owl"},
+        {"name_id": "go", "format": "obo"},
+    ]
+    batch_results = downloader.fetch_batch(resources)
+    print("Batch download results:", batch_results)

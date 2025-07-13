@@ -1,9 +1,9 @@
 from typing import Any, List, Optional
 
-from ontograph.ports.graph_backend import GraphBackend
+from ontograph.ports.graph_backend_port import GraphBackendPort
 
 
-class ProntoGraph(GraphBackend):
+class ProntoGraphAdapter(GraphBackendPort):
     """Adapter implementing graph operations using Pronto."""
 
     def __init__(self, ontology):

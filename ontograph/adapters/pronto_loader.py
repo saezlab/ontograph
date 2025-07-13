@@ -3,10 +3,10 @@ from pathlib import Path
 from typing import Union
 
 import pronto
-from ontograph.ports.ontology_loader import OntologyLoaderPort
+from ontograph.ports.ontology_loader_port import OntologyLoaderPort
 
 
-class ProntoOntologyLoader(OntologyLoaderPort):
+class ProntoLoaderAdapter(OntologyLoaderPort):
     """Adapter that loads ontologies using pronto."""
 
     def __init__(self, cache_dir: Union[str, Path] = None):
@@ -41,3 +41,21 @@ class ProntoOntologyLoader(OntologyLoaderPort):
             )
 
         return pronto.Ontology(str(file_path))
+
+
+if __name__ == "__main__":
+    # Example usage of ProntoLoaderAdapter
+    cache_dir = "data/out"  # or any directory where ontology files are cached
+    loader = ProntoLoaderAdapter(cache_dir=cache_dir)
+
+    # Example: Load a cached ontology file (must exist in cache_dir)
+    ontology_id = "go"  # Use a valid ontology ID
+    format = "obo"
+    try:
+        ontology = loader.load(ontology_id, format)
+        print(f"Loaded ontology: {ontology_id}.{format}")
+        print(f"Number of terms: {len(ontology.terms())}")
+    except FileNotFoundError as e:
+        print(e)
+    except ValueError as e:
+        print(e)

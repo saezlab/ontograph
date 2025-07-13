@@ -1,13 +1,13 @@
 from pathlib import Path
-from types import NoneType
 from typing import Dict, List, Optional, Any
 import yaml
 from pooch import retrieve
 
 from ontograph.config.settings import OBO_FOUNDRY_REGISTRY_URL
+from ontograph.ports.ontology_registry_port import OntologyRegistryPort
 
 
-class OBOFoundryRegistry:
+class OBORegistryAdapter(OntologyRegistryPort):
     """Manages access to the OBO Foundry ontology registry."""
 
     def __init__(self, cache_dir: Path):
@@ -153,7 +153,6 @@ class OBOFoundryRegistry:
         products = metadata.get("products", [])
         for product in products:
             if product.get("id", "").lower() == f"{ontology_id.lower()}.{format.lower()}":
-                print(f"ID: {product.get('id')}")
                 return product.get("ontology_purl")
 
         return None
@@ -189,8 +188,8 @@ if __name__ == "__main__":
     # Define the path to store the registry
     path = Path("./data/out")
 
-    # Create object registry
-    obo_reg = OBOFoundryRegistry(cache_dir=path)
+    # Create registry adapter object
+    obo_reg = OBORegistryAdapter(cache_dir=path)
 
     # Load the registry (in case of not having the registry it will be downloaded automatically)
     obo_reg.load_registry()
@@ -201,8 +200,10 @@ if __name__ == "__main__":
     # List of available ontologies
     print("Number of ontologies: {}".format(len(obo_reg.list_available_ontologies())))
 
-    # Print the link associated to that ontology
-    print(obo_reg.get_download_url("chebiche", "obo"))
+    # Print the link associated to a valid ontology (e.g., 'chebi')
+    print(obo_reg.get_download_url("chebi", "obo"))
 
-    # Print available formats
-    print(obo_reg.get_available_formats(ontology_id="chebicge"))
+    # Print available formats for a valid ontology
+    print(obo_reg.get_available_formats(ontology_id="chebi"))
+
+    # Tip: Use obo_reg.list_available_ontologies() to find valid ontology IDs.

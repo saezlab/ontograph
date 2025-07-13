@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Dict, List, Union
 
 
-class AbstractDownloader(ABC):
+class DownloaderPort(ABC):
     """
     Abstract interface for downloading and caching ontology files.
     """

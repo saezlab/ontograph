@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Optional
 
 from ontograph.config.container import OntographContainer
 from ontograph.core.query_engine import QueryEngine
-from ontograph.ports.graph_backend import GraphBackend
+from ontograph.ports.graph_backend_port import GraphBackendPort
 
 
 class OntologyGraph:
@@ -11,7 +11,7 @@ class OntologyGraph:
     def __init__(self, ontology: Any):
         """Initialize the ontology graph with an ontology object."""
         self.ontology = ontology
-        self.graph: GraphBackend = OntographContainer.get_graph_backend(ontology)
+        self.graph: GraphBackendPort = OntographContainer.get_graph_backend(ontology)
         self.query_engine = QueryEngine(self.graph)
 
     def metadata(self) -> Dict[str, Any]:
