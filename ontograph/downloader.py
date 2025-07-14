@@ -3,22 +3,22 @@ from typing import Dict, List, Optional
 
 from pooch import retrieve
 
-from ontograph.ports.downloader_port import DownloaderPort
-from ontograph.ports.ontology_registry_port import OntologyRegistryPort
+
+from ontograph.ontology_registry import OBORegistryAdapter
 
 
-class PoochDownloaderAdapter(DownloaderPort):
+class PoochDownloaderAdapter:
     """
     Concrete downloader using Pooch for caching ontology files.
     """
 
-    def __init__(self, cache_dir: Path, registry: OntologyRegistryPort):
+    def __init__(self, cache_dir: Path, registry: OBORegistryAdapter):
         """
         Initialize the downloader adapter.
 
         Args:
             cache_dir (Path): Directory for caching downloaded files
-            registry (OntologyRegistryPort): Registry port for resolving download URLs
+            registry (OBORegistryAdapter): Registry port for resolving download URLs
         """
         self.cache_dir = cache_dir
         self.cache_dir.mkdir(parents=True, exist_ok=True)
@@ -92,7 +92,7 @@ class PoochDownloaderAdapter(DownloaderPort):
 
 
 if __name__ == "__main__":
-    from ontograph.adapters.obo_registry_adapter import OBORegistryAdapter
+    from ontograph.ontology_registry import OBORegistryAdapter
 
     # Defines the cache directory
     cache_dir = Path("./data/out")

@@ -3,10 +3,9 @@ from pathlib import Path
 from typing import Union
 
 import pronto
-from ontograph.ports.ontology_loader_port import OntologyLoaderPort
 
 
-class ProntoLoaderAdapter(OntologyLoaderPort):
+class ProntoLoaderAdapter:
     """Adapter that loads ontologies using pronto."""
 
     def __init__(self, cache_dir: Union[str, Path] = None):

@@ -4,10 +4,9 @@ import yaml
 from pooch import retrieve
 
 from ontograph.config.settings import OBO_FOUNDRY_REGISTRY_URL
-from ontograph.ports.ontology_registry_port import OntologyRegistryPort
 
 
-class OBORegistryAdapter(OntologyRegistryPort):
+class OBORegistryAdapter:
     """Manages access to the OBO Foundry ontology registry."""
 
     def __init__(self, cache_dir: Path):
@@ -76,9 +75,6 @@ class OBORegistryAdapter(OntologyRegistryPort):
             {
                 "id": ont.get("id"),
                 "title": ont.get("title"),
-                "description": ont.get("description"),
-                "homepage": ont.get("homepage"),
-                "license": ont.get("license"),
             }
             for ont in self.registry.get("ontologies", [])
             if ont.get("id")  # Only include if it has an ID
