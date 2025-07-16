@@ -31,7 +31,8 @@ dependencies = [
     "toml",
     "pronto",
     "pooch[progress]",
-    "pyyaml"
+    "pyyaml",
+    "appdirs>=1.4.4"
 ]
 description = "A lightweight Python package for loading, representing, and efficiently querying biological ontologies as graph structures."
 license = "MIT"
