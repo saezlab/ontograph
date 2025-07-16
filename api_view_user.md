@@ -10,9 +10,8 @@ import ontograph
 ## Download Ontologies
 - Download a single ontology from standard resources
 ```python
-
 resource = [
-    {"name_id": "go","format": "obo"},
+    {"name_id": "go", "format": "obo"},
 ]
 
 path_ontologie = ontograph.downloader.download(resource, cache_directory)
@@ -20,10 +19,9 @@ path_ontologie = ontograph.downloader.download(resource, cache_directory)
 
 - Download a multiple ontologies from standard resources
 ```python
-
 resources = [
-    {"name_id": "go","format": "obo"},
-    {"name_id": "chebi","format": "owl"},
+    {"name_id": "go", "format": "obo"},
+    {"name_id": "chebi", "format": "owl"},
 ]
 
 paths_ontologies = ontograph.downloader.download(resources, cache_directory)

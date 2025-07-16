@@ -1,4 +1,4 @@
-pronto
 pooch
-tqdm
+pronto
 toml
+tqdm

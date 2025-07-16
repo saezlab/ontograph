@@ -59,6 +59,9 @@ docs = [
 security = [
     "bandit"
 ]
+semantic = [
+    "rdflib>=6.0.0"
+]
 tests = [
     "pytest>=6.0",
     "pytest-cov",
@@ -68,9 +71,6 @@ tests = [
     "codecov-cli>=10.2.0",
     "diff_cover",
     "ruff"
-]
-semantic = [
-    "rdflib>=6.0.0"
 ]
 
 [project.urls]

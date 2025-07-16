@@ -1,30 +1,30 @@
 # ontology_queries.py
+from pronto.term import Term
+from pronto.ontology import Ontology
 
-from typing import Set
-import pronto
+__all__ = [
+    'OntologyQueries',
+]
 
 
 class OntologyQueries:
-    """
-    Query helper for navigating a Pronto ontology.
+    """Query helper for navigating a Pronto ontology.
 
     Provides methods to retrieve ancestors, descendants, parents, and children
     of terms in an ontology.
     """
 
-    def __init__(self, ontology: pronto.Ontology):
-        """
-        Initialize with a Pronto Ontology object.
+    def __init__(self, ontology: Ontology) -> None:
+        """Initialize with a Pronto Ontology object.
 
         :param ontology: A pronto.Ontology instance.
         """
-        if not isinstance(ontology, pronto.Ontology):
-            raise TypeError("ontology must be a pronto.Ontology object")
+        if not isinstance(ontology, Ontology):
+            raise TypeError('ontology must be a pronto.Ontology object')
         self.ont = ontology
 
-    def get_term(self, term_id: str) -> pronto.Term:
-        """
-        Retrieve a pronto.Term object by its identifier.
+    def get_term(self, term_id: str) -> Term:
+        """Retrieve a pronto.Term object by its identifier.
 
         :param term_id: The identifier of the term (e.g., 'GO:0008150').
         :return: pronto.Term object.
@@ -32,9 +32,8 @@ class OntologyQueries:
         """
         return self.ont[term_id]
 
-    def ancestors(self, term_id: str, include_self: bool = False) -> Set[str]:
-        """
-        Get all ancestor term IDs of a given term (transitive parents).
+    def ancestors(self, term_id: str, include_self: bool = False) -> set[str]:
+        """Get all ancestor term IDs of a given term (transitive parents).
 
         :param term_id: Identifier of the term.
         :param include_self: If True, include the term itself in the result.
@@ -46,9 +45,8 @@ class OntologyQueries:
             ancestor_ids.add(term.id)
         return ancestor_ids
 
-    def descendants(self, term_id: str, include_self: bool = False) -> Set[str]:
-        """
-        Get all descendant term IDs of a given term (transitive children).
+    def descendants(self, term_id: str, include_self: bool = False) -> set[str]:
+        """Get all descendant term IDs of a given term (transitive children).
 
         :param term_id: Identifier of the term.
         :param include_self: If True, include the term itself in the result.
@@ -60,9 +58,8 @@ class OntologyQueries:
             descendant_ids.add(term.id)
         return descendant_ids
 
-    def parents(self, term_id: str) -> Set[str]:
-        """
-        Get the direct parent term IDs of a given term.
+    def parents(self, term_id: str) -> set[str]:
+        """Get the direct parent term IDs of a given term.
 
         :param term_id: Identifier of the term.
         :return: A set of direct parent term IDs.
@@ -71,9 +68,8 @@ class OntologyQueries:
         # Direct parents are superclasses at distance=1
         return {parent.id for parent in term.superclasses(distance=5)}
 
-    def children(self, term_id: str) -> Set[str]:
-        """
-        Get the direct child term IDs of a given term.
+    def children(self, term_id: str) -> set[str]:
+        """Get the direct child term IDs of a given term.
 
         :param term_id: Identifier of the term.
         :return: A set of direct child term IDs.

@@ -1,20 +1,19 @@
 from pathlib import Path
-from typing import Dict, List, Optional
 
 from pooch import retrieve
 
-
 from ontograph.ontology_registry import OBORegistryAdapter
+
+__all__ = [
+    'PoochDownloaderAdapter',
+]
 
 
 class PoochDownloaderAdapter:
-    """
-    Concrete downloader using Pooch for caching ontology files.
-    """
+    """Concrete downloader using Pooch for caching ontology files."""
 
-    def __init__(self, cache_dir: Path, registry: OBORegistryAdapter):
-        """
-        Initialize the downloader adapter.
+    def __init__(self, cache_dir: Path, registry: OBORegistryAdapter) -> None:
+        """Initialize the downloader adapter.
 
         Args:
             cache_dir (Path): Directory for caching downloaded files
@@ -24,13 +23,12 @@ class PoochDownloaderAdapter:
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.registry = registry
 
-    def _get_download_url(self, name_id: str, format: str) -> Optional[str]:
+    def _get_download_url(self, name_id: str, format: str) -> str | None:
         """Get download URL from registry."""
         return self.registry.get_download_url(name_id, format)
 
     def fetch(self, url: str, filename: str) -> Path:
-        """
-        Download a file from `url` and cache it locally.
+        """Download a file from `url` and cache it locally.
 
         Args:
             url (str): The URL to download.
@@ -48,9 +46,8 @@ class PoochDownloaderAdapter:
         )
         return Path(local_file)
 
-    def fetch_batch(self, resources: List[Dict[str, str]]) -> Dict[str, Path]:
-        """
-        Download multiple ontology files and cache them locally.
+    def fetch_batch(self, resources: list[dict[str, str]]) -> dict[str, Path]:
+        """Download multiple ontology files and cache them locally.
 
         Args:
             resources (List[Dict[str, str]]): List of dictionaries containing:
@@ -65,13 +62,13 @@ class PoochDownloaderAdapter:
             KeyError: If required keys are missing in the resource dictionary
         """
         if not resources:
-            raise ValueError("Resources list for batch download is empty.")
+            raise ValueError('Resources list for batch download is empty.')
 
         results = {}
 
         for resource in resources:
-            name_id = resource.get("name_id")
-            format = resource.get("format", "obo")  # Default to OBO format
+            name_id = resource.get('name_id')
+            format = resource.get('format', 'obo')  # Default to OBO format
 
             if not name_id:
                 raise KeyError("Resource dictionary must contain 'name_id' key")
@@ -80,22 +77,22 @@ class PoochDownloaderAdapter:
             url = self._get_download_url(name_id, format)
             if not url:
                 raise ValueError(
-                    f"Cannot find download URL for ontology {name_id} "
-                    f"in format {format}"
+                    f'Cannot find download URL for ontology {name_id} '
+                    f'in format {format}'
                 )
 
-            filename = f"{name_id}.{format}"
+            filename = f'{name_id}.{format}'
             local_path = self.fetch(url, filename)
             results[name_id] = local_path
 
         return results
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     from ontograph.ontology_registry import OBORegistryAdapter
 
     # Defines the cache directory
-    cache_dir = Path("./data/out")
+    cache_dir = Path('./data/out')
 
     # Creates a registry object (real implementation OBORegistryAdapter)
     registry = OBORegistryAdapter(cache_dir=cache_dir)
@@ -105,21 +102,23 @@ if __name__ == "__main__":
     downloader = PoochDownloaderAdapter(cache_dir=cache_dir, registry=registry)
 
     ## Example 1. Download a single ontology file from the registry
-    ontology_id = "ado"
-    format = "owl"
+    ontology_id = 'ado'
+    format = 'owl'
 
     # Extract the url from the registry
     url = registry.get_download_url(ontology_id, format)
 
     if url:
         # Downloads the file
-        local_path = downloader.fetch(url=url, filename=f"{ontology_id}.{format}")
-        print(f"Downloaded {ontology_id}.{format} to: {local_path}")
+        local_path = downloader.fetch(
+            url=url, filename=f'{ontology_id}.{format}'
+        )
+        print(f'Downloaded {ontology_id}.{format} to: {local_path}')
 
     ## Example 2. Batch download
     resources = [
-        {"name_id": "chebi", "format": "owl"},
-        {"name_id": "go", "format": "obo"},
+        {'name_id': 'chebi', 'format': 'owl'},
+        {'name_id': 'go', 'format': 'obo'},
     ]
     batch_results = downloader.fetch_batch(resources)
-    print("Batch download results:", batch_results)
+    print('Batch download results:', batch_results)
