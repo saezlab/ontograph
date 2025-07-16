@@ -1,4 +1,4 @@
-# API final view from user perspective
+# User interface
 
 ## Importing the library
 - Complete import of Ontograph
