@@ -3,7 +3,10 @@ from pathlib import Path
 import yaml
 from pooch import retrieve
 
-from ontograph.config.settings import OBO_FOUNDRY_REGISTRY_URL
+from ontograph.config.settings import (
+    DEFAULT_CACHE_DIR,
+    OBO_FOUNDRY_REGISTRY_URL,
+)
 
 __all__ = [
     'OBORegistryAdapter',
@@ -13,7 +16,7 @@ __all__ = [
 class OBORegistryAdapter:
     """Manages access to the OBO Foundry ontology registry."""
 
-    def __init__(self, cache_dir: Path) -> None:
+    def __init__(self, cache_dir: Path = DEFAULT_CACHE_DIR) -> None:
         """Initialize the registry manager.
 
         Args:
