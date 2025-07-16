@@ -1,4 +1,0 @@
-pooch
-pronto
-toml
-tqdm
