@@ -1,3 +1,4 @@
+import pprint
 from pathlib import Path
 
 import yaml
@@ -54,7 +55,7 @@ class OBORegistryAdapter:
         with open(registry_path) as f:
             self._registry = yaml.safe_load(f)
 
-        return self._registry
+        return 'Ontology successfully loaded in memory'
 
     @property
     def registry(self) -> dict:
@@ -128,7 +129,7 @@ class OBORegistryAdapter:
         """
         for ontology in self.registry.get('ontologies', []):
             if ontology.get('id') == ontology_id:
-                return ontology
+                return pprint.pprint(ontology)
         return None
 
     def get_download_url(
