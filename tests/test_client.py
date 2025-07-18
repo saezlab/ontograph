@@ -4,11 +4,11 @@ from unittest.mock import patch
 import pytest
 
 from ontograph.client import OntoRegistryClient
-from ontograph.config.settings import DEFAULT_CACHE_DIR
 
 __all__ = [
     'client',
     'mock_adapter',
+    'temp_cache_dir',
     'test_get_available_formats',
     'test_get_download_url',
     'test_get_ontology_metadata',
@@ -43,9 +43,15 @@ def mock_adapter():
 
 
 @pytest.fixture
+def temp_cache_dir(tmp_path: Path) -> Path:
+    """Provide temporary directory for testing."""
+    return tmp_path
+
+
+@pytest.fixture
 def client(mock_adapter):
     """Fixture to create an OntoRegistryClient instance."""
-    return OntoRegistryClient(cache_dir=Path(DEFAULT_CACHE_DIR))
+    return OntoRegistryClient(cache_dir=Path(temp_cache_dir))
 
 
 def test_load_registry(client, mock_adapter):
