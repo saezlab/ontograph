@@ -33,7 +33,7 @@ dependencies = [
     "pooch[progress]",
     "pyyaml",
     "appdirs>=1.4.4",
-    "pandas>=2.3.1",
+    "pandas>=2.3.1"
 ]
 description = "A lightweight Python package for loading, representing, and efficiently querying biological ontologies as graph structures."
 license = "MIT"
@@ -226,7 +226,7 @@ section-order = [
 "*/__init__.py" = ["D104", "F401"]
 "docs/*" = ["I"]
 "docs/src/conf.py" = ["D100"]
-"tests/*" = ["D"]
+"tests/*" = ["D", "ANN"]
 "tests/conftest.py" = ["D101", "D102", "D103", "E402"]
 
 [tool.ruff.lint.pydocstyle]
