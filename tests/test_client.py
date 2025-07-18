@@ -1,4 +1,5 @@
 from pathlib import Path
+import tempfile
 from unittest.mock import patch
 
 import pytest
@@ -17,8 +18,6 @@ __all__ = [
     'test_print_registry_schema_tree',
     'test_registry_as_dict',
 ]
-
-# filepath: ontograph/test_client.py
 
 
 @pytest.fixture
@@ -43,15 +42,16 @@ def mock_adapter():
 
 
 @pytest.fixture
-def temp_cache_dir(tmp_path: Path) -> Path:
-    """Provide temporary directory for testing."""
-    return tmp_path
+def temp_cache_dir():
+    """Fixture to provide a temporary directory."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        yield Path(temp_dir)
 
 
 @pytest.fixture
-def client(mock_adapter):
+def client(mock_adapter, temp_cache_dir):
     """Fixture to create an OntoRegistryClient instance."""
-    return OntoRegistryClient(cache_dir=Path(temp_cache_dir))
+    return OntoRegistryClient(cache_dir=temp_cache_dir)
 
 
 def test_load_registry(client, mock_adapter):
