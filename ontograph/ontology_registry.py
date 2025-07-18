@@ -76,7 +76,8 @@ class OBORegistryAdapter:
                 - license: License information if available
         TODO: Reviewed. Ready for improvements.
         """
-        return [
+
+        list_ontologies = [
             {
                 'id': ont.get('id'),
                 'title': ont.get('title'),
@@ -84,6 +85,19 @@ class OBORegistryAdapter:
             for ont in self.registry.get('ontologies', [])
             if ont.get('id')  # Only include if it has an ID
         ]
+
+        print('{:<20} {:<40}'.format('name ID', 'Description'))
+        print('-' * 60)
+
+        # Print rows
+        for ontology in list_ontologies:
+            print(
+                '{:<20} {:<40}'.format(
+                    ontology.get('id', ''), ontology.get('title', '')
+                )
+            )
+
+        return None
 
     def print_registry_schema_tree(self) -> None:
         """Print the schema of the loaded OBO Foundry registry as a tree.
@@ -117,19 +131,23 @@ class OBORegistryAdapter:
         print('\nOBO Foundry Registry Schema Structure:\n')
         _print_tree(self.registry)
 
-    def get_ontology_metadata(self, ontology_id: str) -> dict | None:
+    def get_ontology_metadata(
+        self, ontology_id: str, show_metadata: bool = False
+    ) -> dict | None:
         """Get metadata for a specific ontology.
 
         Args:
             ontology_id: The ontology ID (e.g., 'go' for Gene Ontology)
+            show_metadata: If True, print the metadata to the console.
 
         Returns:
-            Optional[Dict]: The ontology metadata or None if not found
-        TODO: Reviewed. Ready for improvements.
+            Optional[Dict]: The ontology metadata or None if not found.
         """
         for ontology in self.registry.get('ontologies', []):
             if ontology.get('id') == ontology_id:
-                return pprint.pprint(ontology)
+                if show_metadata:
+                    pprint.pprint(ontology)
+                return ontology
         return None
 
     def get_download_url(
@@ -146,7 +164,7 @@ class OBORegistryAdapter:
 
         TODO: Reviewed. Ready for improvements.
         """
-        metadata = self.get_ontology_metadata(ontology_id)
+        metadata = self.get_ontology_metadata(ontology_id, show_metadata=False)
 
         if not metadata:
             print(f'The metadata associated to {ontology_id} does not exist!')
@@ -161,6 +179,9 @@ class OBORegistryAdapter:
             ):
                 return product.get('ontology_purl')
 
+        print(
+            f"Ontology '{ontology_id}' with format '.{format}' doesn't exist in the catalog!"
+        )
         return None
 
     def get_available_formats(self, ontology_id: str) -> list[str]:
@@ -184,7 +205,10 @@ class OBORegistryAdapter:
             if product.get('id'):
                 formats.add(product['id'].lower())
 
-        return list(formats)
+        for format in formats:
+            print(format)
+
+        return None
 
 
 # Usage example (add at the end of the file or in your script):
@@ -211,3 +235,4 @@ if __name__ == '__main__':
     print(obo_reg.get_available_formats(ontology_id='chebi'))
 
     # Tip: Use obo_reg.list_available_ontologies() to find valid ontology IDs.
+    print(obo_reg.list_available_ontologies())
