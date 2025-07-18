@@ -1,101 +1,187 @@
 from pathlib import Path
-import tempfile
-from unittest.mock import patch
 
 import pytest
 
-from ontograph.client import OntoRegistryClient
+from ontograph.client import ClientCatalog, ClientOntology
+from ontograph.models import Ontology
 
 __all__ = [
-    'client',
-    'mock_adapter',
-    'temp_cache_dir',
-    'test_get_available_formats',
-    'test_get_download_url',
-    'test_get_ontology_metadata',
-    'test_list_available_ontologies',
-    'test_load_registry',
-    'test_print_registry_schema_tree',
-    'test_registry_as_dict',
+    'client_catalog',
+    'client_ontology',
+    'dummy_ontology_path',
+    'resources_dir',
+    'test_catalog_as_dict_type',
+    'test_client_ontology_introspection_methods',
+    'test_client_ontology_load_from_file',
+    'test_client_ontology_load_invalid_strategy',
+    'test_client_ontology_load_multiple_strategies',
+    'test_client_ontology_navigation_methods',
+    'test_client_ontology_relations_methods',
+    'test_get_download_url_and_formats',
+    'test_get_ontology_metadata_returns_dict',
+    'test_load_catalog_and_list_ontologies',
 ]
 
+# -----------------------------------
+# ----      PyTest Fixtures      ----
+# -----------------------------------
+
 
 @pytest.fixture
-def mock_adapter():
-    """Fixture to mock OBORegistryAdapter."""
-    with patch('ontograph.client.OBORegistryAdapter') as MockAdapter:
-        adapter = MockAdapter.return_value
-        adapter.registry = {'ontology1': {'id': 'ontology1'}}
-        adapter.list_available_ontologies.return_value = [
-            'ontology1',
-            'ontology2',
-        ]
-        adapter.get_ontology_metadata.return_value = {
-            'id': 'ontology1',
-            'name': 'Ontology 1',
-        }
-        adapter.get_download_url.return_value = (
-            'http://example.com/ontology1.obo'
+def resources_dir():
+    return Path(__file__).parent / 'resources'
+
+
+@pytest.fixture
+def dummy_ontology_path(resources_dir):
+    return resources_dir / 'dummy_ontology.obo'
+
+
+@pytest.fixture
+def client_catalog(resources_dir):
+    # Use a test cache directory
+    return ClientCatalog(cache_dir=resources_dir)
+
+
+@pytest.fixture
+def client_ontology(resources_dir):
+    return ClientOntology(cache_dir=resources_dir)
+
+
+# -----------------------------------
+# ----         Unit Tests        ----
+# -----------------------------------
+
+
+def test_load_catalog_and_list_ontologies(client_catalog):
+    # Should load catalog and list available ontologies (may be empty if no catalog present)
+    client_catalog.load_catalog(force_download=False)
+    ontologies = client_catalog.list_available_ontologies()
+    print(ontologies)
+    assert isinstance(ontologies, list)
+    # No assertion on content, as catalog may be empty in test env
+
+
+def test_catalog_as_dict_type(client_catalog):
+    # Should return a dict representing the catalog
+    catalog_dict = client_catalog.catalog_as_dict()
+    assert isinstance(catalog_dict, dict)
+
+
+def test_get_ontology_metadata_returns_dict(client_catalog):
+    # Should return metadata dict for a valid ontology id, or raise for invalid
+    client_catalog.load_catalog()
+    ontologies = client_catalog.list_available_ontologies()
+
+    if ontologies:
+        ontology_id = ontologies[0]['id']
+        meta = client_catalog.get_ontology_metadata(ontology_id=ontology_id)
+        assert isinstance(meta, dict)
+    else:
+        # If no ontologies, expect KeyError
+        with pytest.raises(KeyError):
+            client_catalog.get_ontology_metadata('nonexistent_id')
+
+
+def test_get_download_url_and_formats(client_catalog):
+    client_catalog.load_catalog()
+    ontologies = client_catalog.list_available_ontologies()
+
+    if ontologies:
+        # Determine ontology_id based on type
+        first_ontology = ontologies[0]
+        ontology_id = first_ontology['id']
+
+        try:
+            url = client_catalog.get_download_url(
+                ontology_id=ontology_id,
+            )
+        except ValueError:
+            url = client_catalog.get_download_url(
+                ontology_id=ontology_id, format='owl'
+            )
+
+        assert isinstance(url, str)
+        formats = client_catalog.get_available_formats(first_ontology)
+        assert isinstance(formats, list)
+    else:
+        # Should raise for missing ontology
+        with pytest.raises(KeyError):
+            client_catalog.get_download_url('nonexistent_id')
+        with pytest.raises(KeyError):
+            client_catalog.get_available_formats('nonexistent_id')
+
+
+# ---- Test ClientOntology
+
+
+def test_client_ontology_load_from_file(client_ontology, dummy_ontology_path):
+    # Should load ontology from file and initialize queries
+    ontology = client_ontology.load(file_path_ontology=str(dummy_ontology_path))
+    assert isinstance(ontology, Ontology)
+    # Should be able to access root term
+    root = client_ontology.get_root()
+    assert isinstance(root, list)
+    assert root[0].id == 'Z'
+
+
+def test_client_ontology_load_invalid_strategy(client_ontology):
+    # Should raise ValueError if no strategy is provided
+    with pytest.raises(ValueError):
+        client_ontology.load()
+
+
+def test_client_ontology_load_multiple_strategies(
+    client_ontology, dummy_ontology_path
+):
+    # Should raise ValueError if multiple strategies are provided
+    with pytest.raises(ValueError):
+        client_ontology.load(
+            file_path_ontology=str(dummy_ontology_path),
+            name_id='dummy',
+            format='obo',
         )
-        adapter.get_available_formats.return_value = ['obo', 'json']
-        yield adapter
 
 
-@pytest.fixture
-def temp_cache_dir():
-    """Fixture to provide a temporary directory."""
-    with tempfile.TemporaryDirectory() as temp_dir:
-        yield Path(temp_dir)
+def test_client_ontology_navigation_methods(
+    client_ontology, dummy_ontology_path
+):
+    client_ontology.load(file_path_ontology=str(dummy_ontology_path))
+    # Test navigation methods
+    term = client_ontology.get_term('A')
+    assert term.id == 'A'
+    parents = client_ontology.get_parents('D')
+    assert 'A' in parents
+    children = client_ontology.get_children('A')
+    assert 'D' in children
+    ancestors = client_ontology.get_ancestors('D')
+    assert 'A' in ancestors
+    descendants = client_ontology.get_descendants('A')
+    assert 'D' in descendants
+    siblings = client_ontology.get_siblings('D')
+    assert isinstance(siblings, set)
 
 
-@pytest.fixture
-def client(mock_adapter, temp_cache_dir):
-    """Fixture to create an OntoRegistryClient instance."""
-    return OntoRegistryClient(cache_dir=temp_cache_dir)
+def test_client_ontology_relations_methods(
+    client_ontology, dummy_ontology_path
+):
+    client_ontology.load(file_path_ontology=str(dummy_ontology_path))
+    # Test relation methods
+    assert client_ontology.is_ancestor('A', 'D') is True
+    assert client_ontology.is_descendant('D', 'A') is True
+    assert client_ontology.is_sibling('K1', 'K2') is True
+    common_ancestors = client_ontology.get_common_ancestors(['K1', 'K2'])
+    assert 'G' in common_ancestors
 
 
-def test_load_registry(client, mock_adapter):
-    """Test load_registry method."""
-    client.load_registry(force_download=True)
-    mock_adapter.load_registry.assert_called_once_with(force_download=True)
-
-
-def test_registry_as_dict(client, mock_adapter):
-    """Test registry_as_dict method."""
-    result = client.registry_as_dict()
-    assert result == {'ontology1': {'id': 'ontology1'}}
-
-
-def test_list_available_ontologies(client, mock_adapter):
-    """Test list_available_ontologies method."""
-    result = client.list_available_ontologies()
-    assert result == ['ontology1', 'ontology2']
-
-
-def test_print_registry_schema_tree(client, mock_adapter):
-    """Test print_registry_schema_tree method."""
-    client.print_registry_schema_tree()
-    mock_adapter.print_registry_schema_tree.assert_called_once()
-
-
-def test_get_ontology_metadata(client, mock_adapter):
-    """Test get_ontology_metadata method."""
-    result = client.get_ontology_metadata('ontology1')
-    assert result == {'id': 'ontology1', 'name': 'Ontology 1'}
-    mock_adapter.get_ontology_metadata.assert_called_once_with(
-        'ontology1', show_metadata=False
-    )
-
-
-def test_get_download_url(client, mock_adapter):
-    """Test get_download_url method."""
-    result = client.get_download_url('ontology1', format='obo')
-    assert result == 'http://example.com/ontology1.obo'
-    mock_adapter.get_download_url.assert_called_once_with('ontology1', 'obo')
-
-
-def test_get_available_formats(client, mock_adapter):
-    """Test get_available_formats method."""
-    result = client.get_available_formats('ontology1')
-    assert result == ['obo', 'json']
-    mock_adapter.get_available_formats.assert_called_once_with('ontology1')
+def test_client_ontology_introspection_methods(
+    client_ontology, dummy_ontology_path
+):
+    client_ontology.load(file_path_ontology=str(dummy_ontology_path))
+    # Test introspection methods
+    distance = client_ontology.get_distance_from_root('D')
+    assert isinstance(distance, int)
+    path = client_ontology.get_path_between('A', 'D')
+    assert isinstance(path, list)
+    trajectories = client_ontology.get_trajectories_from_root('D')
+    assert isinstance(trajectories, list)

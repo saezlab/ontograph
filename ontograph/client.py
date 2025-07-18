@@ -1,58 +1,118 @@
-from pathlib import Path
+"""Client interfaces for ontology catalog and ontology operations.
 
+This module provides two main classes:
+- ClientCatalog: For interacting with the ontology catalog, listing available ontologies, and retrieving metadata.
+- ClientOntology: For loading, navigating, and querying individual ontologies.
+
+Example:
+    >>> catalog = ClientCatalog()
+    >>> catalog.load_catalog()
+    >>> catalog.list_available_ontologies()[0]
+    {'id': 'ado', 'title': "Alzheimer's Disease Ontology"}
+
+    >>> client = ClientOntology()
+    >>> ontology = client.load(name_id="go", format="obo")
+    >>> client.get_children("GO:0008150")[0]
+    'GO:0002376'
+"""
+
+from pathlib import Path
+from collections.abc import Iterator
+
+from ontograph.loader import ProntoLoaderAdapter
+from ontograph.models import Ontology, CatalogOntologies
+from ontograph.downloader import DownloaderPort
 from ontograph.config.settings import DEFAULT_CACHE_DIR
-from ontograph.ontology_registry import OBORegistryAdapter
+from ontograph.queries.navigator import OntologyNavigator
+from ontograph.queries.relations import OntologyRelations
+from ontograph.queries.introspection import OntologyIntrospection
 
 __all__ = [
-    'OntoRegistryClient',
-    'registry',
+    'ClientCatalog',
+    'ClientOntology',
 ]
 
 
-class OntoRegistryClient:
-    """Client for interacting with the ontology registry.
+class ClientCatalog:
+    """Client for interacting with the ontology catalog.
 
-    This class provides methods to interact with the ontology registry,
-    including loading the registry, retrieving metadata, and listing available ontologies.
+    Allows loading the catalog, listing available ontologies, and retrieving metadata.
+
+    Example:
+        >>> catalog = ClientCatalog()
+        >>> catalog.load_catalog()
+        >>> catalog.list_available_ontologies()[0]
+        {'id': 'ado', 'title': "Alzheimer's Disease Ontology"}
     """
 
-    def __init__(self, cache_dir: Path = Path(DEFAULT_CACHE_DIR)) -> None:
-        """Initialize the OntoRegistryClient.
+    def __init__(self, cache_dir: str = DEFAULT_CACHE_DIR) -> None:
+        """Initialize the ClientCatalog.
 
         Args:
-            cache_dir (Path, optional): The directory to use for caching registry data. Defaults to DEFAULT_CACHE_DIR.
+            cache_dir (str, optional): Directory for caching catalog data. Defaults to DEFAULT_CACHE_DIR.
         """
-        self.__registry_adapter = OBORegistryAdapter(cache_dir=cache_dir)
+        self.__catalog_adapter = CatalogOntologies(cache_dir=Path(cache_dir))
 
-    def load_registry(self, force_download: bool = False) -> None:
-        """Load the ontology registry.
+    def load_catalog(self, force_download: bool = False) -> None:
+        """Load the ontology catalog.
 
         Args:
-            force_download (bool, optional): Whether to force downloading the registry data. Defaults to False.
+            force_download (bool, optional): Force download of catalog data. Defaults to False.
+
+        Example:
+            >>> catalog = ClientCatalog()
+            >>> catalog.load_catalog()
         """
-        return self.__registry_adapter.load_registry(
+        return self.__catalog_adapter.load_catalog(
             force_download=force_download
         )
 
-    def registry_as_dict(self) -> dict:
-        """Retrieve the ontology registry as a dictionary.
+    def catalog_as_dict(self) -> dict:
+        """Retrieve the ontology catalog as a dictionary.
 
         Returns:
-            dict: The ontology registry represented as a dictionary.
-        """
-        return self.__registry_adapter.registry
+            dict: The ontology catalog.
 
-    def list_available_ontologies(self) -> list[str]:
-        """List all available ontologies in the registry.
+        Example:
+            >>> catalog = ClientCatalog()
+            >>> catalog.load_catalog()
+            >>> isinstance(catalog.catalog_as_dict(), dict)
+            True
+        """
+        return self.__catalog_adapter.catalog
+
+    def list_available_ontologies(self) -> list[dict]:
+        """List all available ontologies in the catalog.
 
         Returns:
-            list[str]: A list of ontology identifiers available in the registry.
-        """
-        return self.__registry_adapter.list_available_ontologies()
+            list[dict]: List of ontology metadata dictionaries.
 
-    def print_registry_schema_tree(self) -> None:
-        """Print the schema tree of the ontology registry."""
-        self.__registry_adapter.print_registry_schema_tree()
+        Example:
+            >>> catalog = ClientCatalog()
+            >>> catalog.load_catalog()
+            >>> isinstance(catalog.list_available_ontologies(), list)
+            True
+        """
+        return self.__catalog_adapter.list_available_ontologies()
+
+    def print_available_ontologies(self) -> None:
+        """Print all available ontologies in the catalog.
+
+        Example:
+            - catalog = ClientCatalog()
+            - catalog.load_catalog()
+            - catalog.print_available_ontologies()
+        """
+        return self.__catalog_adapter.print_available_ontologies()
+
+    def print_catalog_schema_tree(self) -> None:
+        """Print the schema tree of the ontology catalog.
+
+        Example:
+            - catalog = ClientCatalog()
+            - catalog.print_catalog_schema_tree()
+        """
+        self.__catalog_adapter.print_catalog_schema_tree()
 
     def get_ontology_metadata(
         self, ontology_id: str, show_metadata: bool = False
@@ -60,251 +120,550 @@ class OntoRegistryClient:
         """Retrieve metadata for a specific ontology.
 
         Args:
-            ontology_id (str): The identifier of the ontology.
-            show_metadata (bool, optional): Whether to include detailed metadata. Defaults to False.
+            ontology_id (str): Ontology identifier.
+            show_metadata (bool, optional): Include detailed metadata. Defaults to False.
 
         Returns:
-            dict: A dictionary containing metadata for the specified ontology.
+            dict: Metadata for the specified ontology.
+
+        Example:
+            >>> catalog = ClientCatalog()
+            >>> catalog.load_catalog()
+            >>> meta = catalog.get_ontology_metadata('go')
+            >>> isinstance(meta, dict)
+            True
         """
-        return self.__registry_adapter.get_ontology_metadata(
+        return self.__catalog_adapter.get_ontology_metadata(
             ontology_id, show_metadata=show_metadata
         )
 
     def get_download_url(self, ontology_id: str, format: str = 'obo') -> str:
-        """Retrieve the download URL for a specific ontology in a given format.
+        """Retrieve the download URL for a specific ontology and format.
 
         Args:
-            ontology_id (str): The identifier of the ontology.
-            format (str, optional): The format of the ontology (e.g., 'obo', 'json'). Defaults to 'obo'.
+            ontology_id (str): Ontology identifier.
+            format (str, optional): Format (e.g., 'obo', 'json'). Defaults to 'obo'.
 
         Returns:
-            str: The download URL for the specified ontology and format.
+            str: Download URL.
+
+        Example:
+            >>> catalog = ClientCatalog()
+            >>> catalog.load_catalog()
+            >>> url = catalog.get_download_url('go')
+            >>> isinstance(url, str)
+            True
         """
-        return self.__registry_adapter.get_download_url(ontology_id, format)
+        return self.__catalog_adapter.get_download_url(ontology_id, format)
 
     def get_available_formats(self, ontology_id: str) -> list[str]:
-        """Retrieve the list of available formats for a given ontology.
+        """Retrieve available formats for a given ontology.
 
         Args:
-            ontology_id (str): The identifier of the ontology.
+            ontology_id (str): Ontology identifier.
 
         Returns:
-            list[str]: A list of strings representing the available formats for the ontology.
+            list[str]: Available formats.
+
+        Example:
+            >>> catalog = ClientCatalog()
+            >>> catalog.load_catalog()
+            >>> formats = catalog.get_available_formats('go')
+            >>> isinstance(formats, list)
+            True
         """
-        return self.__registry_adapter.get_available_formats(ontology_id)
+        return self.__catalog_adapter.get_available_formats(ontology_id)
 
 
-# class OntologyClient:
-#     """Client for interacting with a specific ontology."""
+class ClientOntology:
+    """Client for loading and querying a single ontology.
 
-#     def __init__(self, ontology: Ontology):
-#         self.queries = OntologyQueries(ontology)
+    Supports loading from file, catalog, or URL, and provides navigation, relation, and introspection methods.
 
-#     def get_parents(self, term_id: str, depth: int = -1, include_self: bool = False):
-#         return self.queries.ancestors(term_id, include_self=include_self)
+    Example:
+        >>> client = ClientOntology()
+        >>> ontology = client.load(file_path_ontology="./tests/resources/dummy_ontology.obo")
+        >>> client.get_root()
+        [Term('Z', name='root')]
+    """
 
-#     def get_children(self, term_id: str, depth: int = -1, include_self: bool = False):
-#         return self.queries.descendants(term_id, include_self=include_self)
+    def __init__(self, cache_dir: str = DEFAULT_CACHE_DIR) -> None:
+        """Initialize the ClientOntology.
 
-#     def get_siblings(self, term_id: str):
-#         parents = self.queries.parent(term_id)
-#         siblings = set()
-#         for parent in parents:
-#             siblings.update(self.queries.children(parent))
-#         siblings.discard(term_id)
-#         return siblings
+        Args:
+            cache_dir (str, optional): Directory for caching ontology data. Defaults to DEFAULT_CACHE_DIR.
+        """
+        self._cache_dir = Path(cache_dir)
+        self._ontology: Ontology | None = None
+        self._navigator = None
+        self._relations = None
+        self._introspection = None
 
-#     def get_roots(self):
-#         return [term.id for term in self.queries.ont if not term.superclasses()]
+    def load(
+        self,
+        file_path_ontology: str | None = None,
+        name_id: str | None = None,
+        format: str | None = None,
+        url_ontology: str | None = None,
+        filename: str | None = None,
+        downloader: DownloaderPort = None,
+    ) -> Ontology:
+        """Load an ontology using one of three strategies.
 
-#     def get_leaves(self):
-#         return [term.id for term in self.queries.ont if not term.subclasses()]
+        Exactly one of the following must be provided:
+            - file_path_ontology
+            - name_id and format
+            - url_ontology, filename, and downloader
 
-#     def find_path(self, source_id: str, target_id: str):
-#         # Implement pathfinding logic if needed
-#         pass
+        Args:
+            file_path_ontology (str, optional): Path to local ontology file.
+            name_id (str, optional): Catalog ontology ID.
+            format (str, optional): Format for catalog loading.
+            url_ontology (str, optional): Remote ontology URL.
+            filename (str, optional): Filename for downloaded ontology.
+            downloader (callable, optional): Downloader function.
 
-#     def is_descendant(self, child_id: str, parent_id: str):
-#         return child_id in self.queries.descendants(parent_id)
+        Returns:
+            Ontology: Loaded ontology.
 
-#     def get_depth(self, term_id: str):
-#         # Implement depth calculation logic if needed
-#         pass
+        Raises:
+            ValueError: If no or multiple strategies are provided.
+            RuntimeError: If loading fails.
 
-#     def list_terms(self, prefix="GO:", include_obsolete=False):
-#         return [
-#             term.id
-#             for term in self.queries.ont
-#             if term.id.startswith(prefix) and (include_obsolete or not term.obsolete)
-#         ]
+        Example:
+            >>> client = ClientOntology()
+            >>> ontology = client.load(file_path_ontology="./tests/resources/dummy_ontology.obo")
+            >>> isinstance(ontology, Ontology)
+            True
+        """
+        is_file = bool(file_path_ontology)
+        is_catalog = bool(name_id and format)
+        is_url = bool(url_ontology and filename and downloader)
 
-#     def get_term_info(self, term_id: str):
-#         term = self.queries.get_term(term_id)
-#         return {
-#             "id": term.id,
-#             "name": term.name,
-#             "definition": term.definition,
-#             "synonyms": term.synonyms,
-#         }
+        strategies = {
+            'file': is_file,
+            'catalog': is_catalog,
+            'url': is_url,
+        }
+        active_strategies = [key for key, value in strategies.items() if value]
 
-#     def search_terms(self, query: str, exact: bool = False):
-#         results = []
-#         for term in self.queries.ont:
-#             if exact and term.name == query:
-#                 results.append(term.id)
-#             elif not exact and query.lower() in term.name.lower():
-#                 results.append(term.id)
-#         return results
+        if len(active_strategies) == 0:
+            raise ValueError('No valid loading strategy provided.')
+        if len(active_strategies) > 1:
+            raise ValueError(
+                f'Multiple loading strategies provided: {active_strategies}. Please specify only one.'
+            )
 
-#     def get_relationships(self, term_id: str):
-#         term = self.queries.get_term(term_id)
-#         return term.relationships
+        loader = ProntoLoaderAdapter(cache_dir=self._cache_dir)
 
-#     def get_terms_by_relation(self, relation: str):
-#         terms = []
-#         for term in self.queries.ont:
-#             if relation in term.relationships:
-#                 terms.append(term.id)
-#         return terms
+        if is_file:
+            self._ontology = loader.load_from_file(file_path_ontology)
+        elif is_catalog:
+            self._ontology = loader.load_from_catalog(name_id, format)
+        elif is_url:
+            self._ontology = loader.load_from_url(
+                url_ontology, filename, downloader
+            )
+        else:
+            raise RuntimeError(
+                'Unexpected loading strategy resolution failure.'
+            )
 
-#     def get_common_ancestors(self, term_ids: list[str]):
-#         ancestor_sets = [self.queries.ancestors(term_id) for term_id in term_ids]
-#         return set.intersection(*ancestor_sets)
+        self._initialize_queries()
 
-#     def term_exists(self, term_id: str):
-#         try:
-#             self.queries.get_term(term_id)
-#             return True
-#         except KeyError:
-#             return False
+        return self._ontology
 
+    def _initialize_queries(self) -> None:
+        """Initialize query adapters for navigation, relations, and introspection."""
+        self._navigator = OntologyNavigator(self._get_ontology)
+        self._relations = OntologyRelations(navigator=self._navigator)
+        self._introspection = OntologyIntrospection(
+            navigator=self._navigator,
+            relations=self._relations,
+        )
 
-def registry(cache_dir: Path = Path(DEFAULT_CACHE_DIR)) -> OntoRegistryClient:
-    """Create a registry client."""
-    registry_object = OntoRegistryClient(cache_dir=Path(cache_dir))
-    registry_object.load_registry()
-    return registry_object
+    @property
+    def _get_ontology(self) -> Ontology:
+        """Access the loaded ontology.
 
+        Returns:
+            Ontology: The loaded ontology.
 
-# def load(path: str, name_id: str, format: str = "obo") -> OntologyClient:
-#     """Load an ontology and return a client for interacting with it."""
-#     loader = ProntoLoaderAdapter(cache_dir=Path(path))
-#     ontology = loader.load(name_id=name_id, format=format)
-#     return OntologyClient(ontology)
+        Raises:
+            RuntimeError: If ontology not loaded.
 
+        """
+        if self._ontology is None:
+            raise RuntimeError('Ontology not loaded. Call `load()` first.')
+        return self._ontology
 
-# # TODO: create a client interface class to ontograph
+    # ---- Navigation Methods
 
-# class OntologyClient:
-#     ontology_object: Ontology
+    def get_term(self, term_id: str) -> object:
+        """Retrieve a term by its ID.
 
-#     # 1. list of catalog of ontologies
-#     # TODO: Implement a funtion that returns all the ontologies in the catalog (OBO Foundries)
-#     def list_ontologies():
-#         pass
+        Args:
+            term_id (str): Term identifier.
 
-#     # 2. load an ontology
-#     # TODO: Implement a function to load a specified ontology in a given format.
-#     # This function should accept a target path to download the ontology or retrieve
-#     # it from cache if already available.
-#     def load(path: str, name_id: str, format: str = "obo") -> Any:
-#         pass
+        Returns:
+            object: Term object.
 
-#     # ----------------------------------------------
-#     # ----      Core hierarchical queries       ----
-#     # ----------------------------------------------
-#     # 3. get parents/ancestors
-#     # TODO: Implement a function to return all parent terms of a given ontology term,
-#     # allowing control over the traversal depth.
-#     def get_parents(
-#         term_id: str, depth: int = -1, include_self: bool = False
-#     ) -> list[str]:
-#         pass
+        Example:
+            >>> client = ClientOntology()
+            >>> ontology = client.load(file_path_ontology="./tests/resources/dummy_ontology.obo")
+            >>> client.get_term("A")
+            Term('A', name='termA')
+        """
+        return self._navigator.get_term(term_id=term_id)
 
-#     # 4. get children/descendants
-#     # TODO: Implement a function to retrieve all child terms of a given ontology term,
-#     # with optional control over traversal depth.
-#     def get_children(
-#         term_id: str, depth: int = -1, include_self: bool = False
-#     ) -> list[str]:
-#         pass
+    def get_parents(self, term_id: str, include_self: bool = False) -> list:
+        """Get parent terms of a given term.
 
-#     # 5. get siblings
-#     # TODO: retrieve term sharing the same parents(s)
-#     def get_siblings(term_id):
-#         pass
+        Args:
+            term_id (str): Term identifier.
+            include_self (bool, optional): Include the term itself. Defaults to False.
 
-#     # 6. get root terms
-#     # TODO: Retrieve all terms without parents (top categories in our ontology)
-#     def get_roots():
-#         pass
+        Returns:
+            list: Parent term IDs.
 
-#     # 7. get leaf terms
-#     # TODO: retrieve all terms without children (e.g., most specific categories)
-#     def get_leaves():
-#         pass
+        Example:
+            >>> client = ClientOntology()
+            >>> ontology = client.load(file_path_ontology="./tests/resources/dummy_ontology.obo")
+            >>> client.get_parents("D")
+            ['A']
+        """
+        return self._navigator.get_parents(
+            term_id=term_id, include_self=include_self
+        )
 
-#     # ----------------------------------------------
-#     # ----        Graph & Path queries          ----
-#     # ----------------------------------------------
-#     # 8. find path between two terms
-#     # TODO: determine the relationship?path between two terms (if any)
-#     def find_path(source_id, target_id):
-#         pass
+    def get_children(self, term_id: str, include_self: bool = False) -> list:
+        """Get child terms of a given term.
 
-#     # 9. Check subsumption (is a relationship)
-#     # TODO: Check if a term is descendant of another
-#     def is_descendant(child_id, parent_id):
-#         pass
+        Args:
+            term_id (str): Term identifier.
+            include_self (bool, optional): Include the term itself. Defaults to False.
 
-#     # 10. get_depth(term_id)
-#     # TODO: return the depth of a term in the hierarchy
-#     def get_depth(term_id):
-#         pass
+        Returns:
+            list: Child term IDs.
 
-#     # ----------------------------------------------
-#     # ----      Ontology Metadata queries       ----
-#     # ----------------------------------------------
-#     # 11. List of terms
-#     # TODO: Enumerate all terms with optional filtering
-#     # TODO: clarify function
-#     def list_terms(prefix="GO:", include_obsolete=False):
-#         pass
+        Example:
+            >>> client = ClientOntology()
+            >>> ontology = client.load(file_path_ontology="./tests/resources/dummy_ontology.obo")
+            >>> client.get_children("D")
+            ['E', 'F', 'G']
+        """
+        return self._navigator.get_children(
+            term_id=term_id, include_self=include_self
+        )
 
-#     # 12. get term metadata
-#     # TODO: retrieve details such as label, definition, synonyms, etc.
-#     def get_term_info(term_id):
-#         pass
+    def get_ancestors(
+        self,
+        term_id: str,
+        distance: int | None = None,
+        include_self: bool = False,
+    ) -> list[str]:
+        """Get ancestor terms of a given term.
 
-#     # 12. Search terms by label or synonym
-#     # TODO: Fuzzy or exact search for term labels.
-#     # TODO: clarify this function
-#     def search_terms(query="metabolic process", exact=False):
-#         pass
+        Args:
+            term_id (str): Term identifier.
+            distance (int, optional): Maximum distance from term. Defaults to None.
+            include_self (bool, optional): Include the term itself. Defaults to False.
 
-#     # ----------------------------------------------
-#     # ----      Advanced semantic  queries      ----
-#     # ----------------------------------------------
-#     # 13. get relationships of a term
-#     # TODO: Return all relationships (not just hierarchical: part_of, regulates, etc.).
-#     # TODO: clarify
-#     def get_relationships(term_id):
-#         pass
+        Returns:
+            list[str]: Ancestor term IDs.
 
-#     # 14. Get terms by relationship type
-#     # TODO: Retrieve all terms linked via a specific relationship type.
-#     def get_terms_by_relation(terms="part_of"):
-#         pass
+        Example:
+            >>> client = ClientOntology()
+            >>> ontology = client.load(file_path_ontology="./tests/resources/dummy_ontology.obo")
+            >>> client.get_ancestors("D")
+            ['A', 'Z']
+        """
+        return self._navigator.get_ancestors(
+            term_id=term_id,
+            distance=distance,
+            include_self=include_self,
+        )
 
-#     # 15. Find common ancestors
-#     # TODO: Determine shared parent terms between two or more terms.
-#     def get_common_ancestors(term_ids):
-#         pass
+    def get_ancestors_with_distance(
+        self, term_id: str, include_self: bool = False
+    ) -> Iterator[tuple[object, int]]:
+        """Get ancestor terms and their distances.
 
-#     # ----------------------------------------------
-#     # ----              Utilities               ----
-#     # ----------------------------------------------
-#     # 16. Check if term exists
-#     # TODO: Validate a term ID
-#     def term_exists(term_id):
-#         pass
+        Args:
+            term_id (str): Term identifier.
+            include_self (bool, optional): Include the term itself. Defaults to False.
+
+        Returns:
+            Iterator[tuple[object, int]]: Iterator of (term, distance).
+
+        Example:
+            >>> client = ClientOntology()
+            >>> ontology = client.load(file_path_ontology="./tests/resources/dummy_ontology.obo")
+            >>> list(client.get_ancestors_with_distance("D"))
+            [(Term('A', name='termA'), -1), (Term('Z', name='root'), -2)]
+        """
+        return self._navigator.get_ancestors_with_distance(
+            term_id=term_id,
+            include_self=include_self,
+        )
+
+    def get_descendants(
+        self,
+        term_id: str,
+        distance: int | None = None,
+        include_self: bool = False,
+    ) -> set[str]:
+        """Get descendant terms of a given term.
+
+        Args:
+            term_id (str): Term identifier.
+            distance (int, optional): Maximum distance from term. Defaults to None.
+            include_self (bool, optional): Include the term itself. Defaults to False.
+
+        Returns:
+            set[str]: Descendant term IDs.
+
+        Example:
+            >>> client = ClientOntology()
+            >>> ontology = client.load(file_path_ontology="./tests/resources/dummy_ontology.obo")
+            >>> sorted(client.get_descendants("F"))
+            ['O', 'Y']
+        """
+        return self._navigator.get_descendants(
+            term_id=term_id,
+            distance=distance,
+            include_self=include_self,
+        )
+
+    def get_descendants_with_distance(
+        self, term_id: str, include_self: bool = False
+    ) -> Iterator[tuple[object, int]]:
+        """Get descendant terms and their distances.
+
+        Args:
+            term_id (str): Term identifier.
+            include_self (bool, optional): Include the term itself. Defaults to False.
+
+        Returns:
+            Iterator[tuple[object, int]]: Iterator of (term, distance).
+
+        Example:
+            >>> client = ClientOntology()
+            >>> ontology = client.load(file_path_ontology="./tests/resources/dummy_ontology.obo")
+            >>> list(client.get_descendants_with_distance("F"))
+            [(Term('O', name='termO'), 1), (Term('Y', name='termY'), 1)]
+        """
+        return self._navigator.get_descendants_with_distance(
+            term_id=term_id,
+            include_self=include_self,
+        )
+
+    def get_siblings(
+        self, term_id: str, include_self: bool = False
+    ) -> set[str]:
+        """Get sibling terms of a given term.
+
+        Args:
+            term_id (str): Term identifier.
+            include_self (bool, optional): Include the term itself. Defaults to False.
+
+        Returns:
+            set[str]: Sibling term IDs.
+
+        Example:
+            >>> client = ClientOntology()
+            >>> ontology = client.load(file_path_ontology="./tests/resources/dummy_ontology.obo")
+            >>> sorted(client.get_siblings("F"))
+            ['E', 'G']
+
+        """
+        return self._navigator.get_siblings(
+            term_id=term_id, include_self=include_self
+        )
+
+    def get_root(self) -> list:
+        """Get root terms of the ontology.
+
+        Returns:
+            list: Root term IDs.
+
+        Example:
+            >>> client = ClientOntology()
+            >>> ontology = client.load(file_path_ontology="./tests/resources/dummy_ontology.obo")
+            >>> client.get_root()
+            [Term('Z', name='root')]
+        """
+        return self._navigator.get_root()
+
+    # ---- Relation Methods
+
+    def is_ancestor(self, ancestor_node: str, descendant_node: str) -> bool:
+        """Check if one term is an ancestor of another.
+
+        Args:
+            ancestor_node (str): Ancestor term ID.
+            descendant_node (str): Descendant term ID.
+
+        Returns:
+            bool: True if ancestor_node is ancestor of descendant_node.
+
+        Example:
+            >>> client = ClientOntology()
+            >>> ontology = client.load(file_path_ontology="./tests/resources/dummy_ontology.obo")
+            >>> client.is_ancestor("A", "N")
+            True
+        """
+        return self._relations.is_ancestor(
+            ancestor_node=ancestor_node,
+            descendant_node=descendant_node,
+        )
+
+    def is_descendant(self, descendant_node: str, ancestor_node: str) -> bool:
+        """Check if one term is a descendant of another.
+
+        Args:
+            descendant_node (str): Descendant term ID.
+            ancestor_node (str): Ancestor term ID.
+
+        Returns:
+            bool: True if descendant_node is descendant of ancestor_node.
+
+        Example:
+            >>> client = ClientOntology()
+            >>> ontology = client.load(file_path_ontology="./tests/resources/dummy_ontology.obo")
+            >>> client.is_descendant("N", "A")
+            True
+        """
+        return self._relations.is_descendant(
+            descendant_node=descendant_node,
+            ancestor_node=ancestor_node,
+        )
+
+    def is_sibling(self, nodeA: str, nodeB: str) -> bool:
+        """Check if two terms are siblings.
+
+        Args:
+            nodeA (str): First term ID.
+            nodeB (str): Second term ID.
+
+        Returns:
+            bool: True if nodeA and nodeB are siblings.
+
+        Example:
+            >>> client = ClientOntology()
+            >>> ontology = client.load(file_path_ontology="./tests/resources/dummy_ontology.obo")
+            >>> client.is_sibling("E", "F")
+            True
+        """
+        return self._relations.is_sibling(nodeA=nodeA, nodeB=nodeB)
+
+    def get_common_ancestors(self, node_ids: list[str]) -> set:
+        """Get common ancestors of multiple terms.
+
+        Args:
+            node_ids (list[str]): List of term IDs.
+
+        Returns:
+            set: Common ancestor term IDs.
+
+        Example:
+            >>> client = ClientOntology()
+            >>> ontology = client.load(file_path_ontology="./tests/resources/dummy_ontology.obo")
+            >>> sorted(client.get_common_ancestors(["K", "L"]))
+            ['B', 'Z']
+        """
+        return self._relations.get_common_ancestors(node_ids=node_ids)
+
+    def get_lowest_common_ancestors(self, node_ids: list[str]) -> set:
+        """Get lowest common ancestors of multiple terms.
+
+        Args:
+            node_ids (list[str]): List of term IDs.
+
+        Returns:
+            set: Lowest common ancestor term IDs.
+
+        Example:
+            >>> client = ClientOntology()
+            >>> ontology = client.load(file_path_ontology="./tests/resources/dummy_ontology.obo")
+            >>> client.get_lowest_common_ancestors(["K", "L"])
+            {'B'}
+        """
+        return self._relations.get_lowest_common_ancestors(node_ids=node_ids)
+
+    # ---- Introspection Methods
+
+    def get_distance_from_root(self, term_id: str) -> int | None:
+        """Get the distance of a term from the root.
+
+        Args:
+            term_id (str): Term identifier.
+
+        Returns:
+            int | None: Distance from root, or None if not found.
+
+        Example:
+            >>> client = ClientOntology()
+            >>> ontology = client.load(file_path_ontology="./tests/resources/dummy_ontology.obo")
+            >>> client.get_distance_from_root("U")
+            6
+        """
+        return self._introspection.get_distance_from_root(term_id=term_id)
+
+    def get_path_between(self, nodeA: str, nodeB: str) -> list[dict]:
+        """Get the path between two terms.
+
+        Args:
+            nodeA (str): Start term ID.
+            nodeB (str): End term ID.
+
+        Returns:
+            list[dict]: List of path steps.
+
+        Example:
+            >>> client = ClientOntology()
+            >>> ontology = client.load(file_path_ontology="./tests/resources/dummy_ontology.obo")
+            >>> client.get_path_between("N", "D")
+            [{'id': 'D', 'distance': 0}, {'id': 'E', 'distance': 1}, {'id': 'N', 'distance': 2}]
+            >>> client.get_path_between("N", "C")
+            []
+        """
+        return self._introspection.get_path_between(nodeA=nodeA, nodeB=nodeB)
+
+    def get_trajectories_from_root(self, term_id: str) -> list[dict]:
+        """Get all trajectories from the root to a term.
+
+        Args:
+            term_id (str): Term identifier.
+
+        Returns:
+            list[dict]: List of trajectories.
+
+        Example:
+            >>> client = ClientOntology()
+            >>> ontology = client.load(file_path_ontology="./tests/resources/dummy_ontology.obo")
+            >>> client.get_trajectories_from_root("A")
+            [[{'id': 'Z', 'name': 'root', 'distance': -1}, {'id': 'A', 'name': 'termA', 'distance': 0}]]
+        """
+        return self._introspection.get_trajectories_from_root(term_id=term_id)
+
+    def print_term_trajectories_tree(self, trajectories: list[dict]) -> None:
+        """Print a tree representation of term trajectories.
+
+        Args:
+            trajectories (list[dict]): List of trajectories.
+
+        Example:
+            >>> client = ClientOntology()
+            >>> ontology = client.load(file_path_ontology="./tests/resources/dummy_ontology.obo")
+            >>> traj = client.get_trajectories_from_root("D")
+            >>> client.print_term_trajectories_tree(traj)
+            Z: root (distance=-2)
+            └── A: termA (distance=-1)
+                └── D: termD (distance=0)
+        """
+        self._introspection.print_term_trajectories_tree(
+            trajectories=trajectories
+        )
+
+        return None

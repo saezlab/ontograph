@@ -1,0 +1,129 @@
+
+format-version: 1.2
+ontology: go
+
+[Term]
+id: Z
+name: root
+
+[Term]
+id: A
+name: termA
+is_a: Z ! root
+
+[Term]
+id: D
+name: termD
+is_a: A ! termA
+
+[Term]
+id: E
+name: termE
+is_a: D ! termD
+
+[Term]
+id: N
+name: termN
+is_a: E ! termE
+
+[Term]
+id: F
+name: termF
+is_a: D ! termD
+
+[Term]
+id: O
+name: termO
+is_a: F ! termF
+
+[Term]
+id: Y
+name: termY
+is_a: F ! termF
+is_a: W ! termW
+
+[Term]
+id: G
+name: termG
+is_a: D ! termD
+is_a: K ! termK
+
+[Term]
+id: K1
+name: termK1
+is_a: G ! termG
+
+[Term]
+id: K2
+name: termK2
+is_a: G ! termG
+
+[Term]
+id: B
+name: termB
+is_a: Z ! root
+
+[Term]
+id: H
+name: termH
+is_a: B ! termB
+
+[Term]
+id: I
+name: termI
+is_a: B ! termB
+
+[Term]
+id: K
+name: termK
+is_a: H ! termH
+
+[Term]
+id: Q
+name: termQ
+is_a: K ! termK
+
+[Term]
+id: L
+name: termL
+is_a: I ! termI
+
+[Term]
+id: C
+name: termC
+is_a: Z ! root
+
+[Term]
+id: J
+name: termJ
+is_a: C ! termC
+
+[Term]
+id: M
+name: termM
+is_a: J ! termJ
+
+[Term]
+id: S
+name: termS
+is_a: M ! termM
+
+[Term]
+id: T
+name: termT
+is_a: S ! termS
+
+[Term]
+id: U
+name: termU
+is_a: T ! termT
+
+[Term]
+id: V
+name: termV
+is_a: U ! termU
+
+[Term]
+id: W
+name: termW
+is_a: U ! termU

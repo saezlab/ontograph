@@ -1,3 +1,3 @@
-from ontograph.client import registry  # , load
+# from ontograph.client import load_catalog
 
-__all__ = ['registry', 'load']
+# __all__ = ["load_catalog"]
