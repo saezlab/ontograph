@@ -22,9 +22,9 @@ default_stages:
 repos:
     # Fast Python linter and formatter with auto-fix support
 -   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.12.0
+    rev: v0.12.3
     hooks:
-    -   id: ruff
+    -   id: ruff-check
         args: [--fix, --show-fixes]
         stages: [pre-commit]
         files: \.py$
@@ -79,7 +79,7 @@ repos:
 
   # Format TOML and YAML files with pretty-format hooks
 -   repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
-    rev: v2.14.0
+    rev: v2.15.0
     hooks:
     -   id: pretty-format-toml
         args:
@@ -95,3 +95,9 @@ repos:
         -   '4'
         stages: [pre-commit]
         files: \.ya?ml$
+
+# clean output from jupyter notebooks
+-   repo: https://github.com/kynan/nbstripout
+    rev: 0.8.1
+    hooks:
+    -   id: nbstripout
