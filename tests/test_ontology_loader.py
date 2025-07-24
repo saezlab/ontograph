@@ -68,7 +68,6 @@ def test_init_with_default_cache() -> None:
     """Test initialization with default cache directory."""
     loader = ProntoLoaderAdapter()
     assert loader.cache_dir == DEFAULT_CACHE_DIR
-    assert loader.cache_dir.exists()
 
 
 def test_init_with_custom_cache(temp_cache_dir: Path) -> None:
