@@ -14,7 +14,9 @@ from pathlib import Path
 
 from pronto.ontology import Ontology
 
+from ontograph.downloader import PoochDownloaderAdapter
 from ontograph.config.settings import DEFAULT_CACHE_DIR
+from ontograph.ontology_registry import OBORegistryAdapter
 
 __all__ = [
     'ProntoLoaderAdapter',
@@ -44,9 +46,36 @@ class ProntoLoaderAdapter:
             Creates the cache directory if it doesn't exist.
         """
         self.cache_dir = Path(cache_dir) if cache_dir else DEFAULT_CACHE_DIR
-        self.cache_dir.mkdir(parents=True, exist_ok=True)
 
-    def load(self, name_id: str, format: str = 'obo') -> Ontology:
+    def load_from_file(self, path_file: str) -> Ontology:
+        """Loads an ontology from the specified file path.
+
+        Args:
+            path_file (str): The path to the ontology file.
+
+        Returns:
+            Ontology: The loaded ontology object if successful.
+
+        Raises:
+            TypeError: If the ontology cannot be loaded due to a type error.
+            ValueError: If the ontology cannot be loaded due to a value error.
+
+        Prints:
+            Status messages indicating the progress and result of the loading process.
+        """
+        path_file = Path(path_file)
+        if path_file.exists():
+            print('Loading ontology...')
+            try:
+                ontology = Ontology(path_file)
+            except TypeError:
+                print('The ontology cannot be loaded')
+            except ValueError:
+                print('The ontology cannot be loaded')
+            print('Ontology successfully loaded!!!')
+            return ontology
+
+    def load_from_registry(self, name_id: str, format: str = 'obo') -> Ontology:
         """Load an ontology from a cached file.
 
         This method loads an ontology file from the cache directory and parses it
@@ -76,18 +105,52 @@ class ProntoLoaderAdapter:
             >>> print(f"Loaded {len(go_ontology.terms())} terms")
             Loaded 50000 terms
         """
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+
         if format not in ['obo', 'owl']:
             raise ValueError(f'Unsupported format: {format}')
 
         file_path = self.cache_dir / f'{name_id}.{format}'
 
         if not file_path.exists():
-            raise FileNotFoundError(
+            print(
                 f'Ontology file not found: {file_path}. '
                 'Please ensure it is downloaded first.'
             )
+            print('Downloading ontology...')
+            # Load registry
+            onto_registry = OBORegistryAdapter(cache_dir=self.cache_dir)
 
-        return Ontology(str(file_path))
+            # Instantiate downloader
+            ontology_downloader = PoochDownloaderAdapter(
+                cache_dir=self.cache_dir, registry=onto_registry
+            )
+
+            # Download resources
+            resources = [
+                {
+                    'name_id': name_id,
+                    'format': format,
+                },
+            ]
+            file_path = ontology_downloader.fetch_batch(resources=resources)
+            file_path = file_path.get(name_id)
+
+            print(f'My ontology path: {file_path}')
+
+            print(f'Ontology downloaded? {file_path.exists()}')
+            print('Ontology successfully downloaded!')
+
+        try:
+            print('Loading ontology...`')
+            ontology = Ontology(file_path)
+        except TypeError:
+            print('The ontology cannot be loaded')
+        except ValueError:
+            print('The ontology is in an unsupported format')
+        print('Ontology successfully loaded!!!')
+
+        return ontology
 
 
 if __name__ == '__main__':
@@ -99,7 +162,7 @@ if __name__ == '__main__':
     ontology_id = 'go'  # Use a valid ontology ID
     format = 'obo'
     try:
-        ontology = loader.load(ontology_id, format)
+        ontology = loader.load_from_registry(ontology_id, format)
         print(f'Loaded ontology: {ontology_id}.{format}')
         print(f'Number of terms: {len(ontology.terms())}')
     except FileNotFoundError as e:

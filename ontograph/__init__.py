@@ -1,3 +1,3 @@
-from ontograph.client import registry  # , load
+from ontograph.client import load, registry
 
 __all__ = ['registry', 'load']

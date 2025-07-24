@@ -11,6 +11,8 @@ __all__ = [
     'PACKAGE_VERSION',
 ]
 
+print(Path(__file__))
+
 # Read package information from pyproject.toml
 _PYPROJECT_PATH = Path(__file__).parents[2] / 'pyproject.toml'
 with open(_PYPROJECT_PATH, 'r') as f:

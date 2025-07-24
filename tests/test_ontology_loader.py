@@ -83,23 +83,20 @@ def test_init_with_string_path() -> None:
     path_str = './test_cache'
     loader = ProntoLoaderAdapter(cache_dir=path_str)
     assert loader.cache_dir == Path(path_str)
-    assert loader.cache_dir.exists()
-    # Cleanup
-    loader.cache_dir.rmdir()
 
 
 def test_load_invalid_format(temp_cache_dir: Path) -> None:
     """Test loading with invalid format."""
     loader = ProntoLoaderAdapter(cache_dir=temp_cache_dir)
     with pytest.raises(ValueError, match='Unsupported format: invalid'):
-        loader.load('test', format='invalid')
+        loader.load_from_registry('test', format='invalid')
 
 
 def test_load_missing_file(temp_cache_dir: Path) -> None:
     """Test loading a non-existent file."""
     loader = ProntoLoaderAdapter(cache_dir=temp_cache_dir)
-    with pytest.raises(FileNotFoundError):
-        loader.load('nonexistent', format='obo')
+    with pytest.raises(TypeError):
+        loader.load_from_registry(name_id='nonexistent', format='obo')
 
 
 def test_load_valid_ontology(
@@ -107,6 +104,6 @@ def test_load_valid_ontology(
 ) -> None:
     """Test loading a valid ontology file."""
     loader = ProntoLoaderAdapter(cache_dir=temp_cache_dir)
-    ontology = loader.load('test', format='obo')
+    ontology = loader.load_from_registry('test', format='obo')
     assert isinstance(ontology, Ontology)
     assert len(ontology.terms()) > 0

@@ -151,7 +151,7 @@ if __name__ == '__main__':
         print(f'Definition: {term.definition}')
 
         # Get immediate parents and children
-        parents = queries.parents(example_term)
+        parents = queries.parent(example_term)
         children = queries.children(example_term)
         print(f'\nDirect parents: {len(parents)}')
         for parent_id in parents:
