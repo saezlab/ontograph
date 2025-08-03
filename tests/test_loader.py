@@ -142,10 +142,15 @@ def test_load_from_url_downloader_error(pronto_loader, monkeypatch):
         )
 
 
-def test_load_from_url_load_ontology_error(pronto_loader, monkeypatch):
+def test_load_from_url_load_ontology_error(
+    pronto_loader, monkeypatch, tmp_path
+):
     class DummyDownloader:
         def fetch_from_url(self, url_ontology, filename):
-            return Path('/tmp/ado.obo')
+            # Use pytest's tmp_path fixture for a safe temp file
+            temp_file = tmp_path / 'ado.obo'
+            temp_file.write_text('dummy content')
+            return temp_file
 
     monkeypatch.setattr(
         pronto_loader,
