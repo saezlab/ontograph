@@ -64,6 +64,51 @@ client_dummy_ontology = ClientOntology(cache_dir="./data/out")
 client_dummy_ontology.load(file_path_ontology="./tests/resources/dummy_ontology.obo")
 ```
 #### Queries for your ontology
+
+We included a demo file containing the following graph representing an ontology. The Node "Z" represents the Root node of this ontology.
+
+```mermaid
+graph TB
+    
+    Z((Z)) --> A((A))
+    Z((Z)) --> B((B))
+    Z((Z)) --> C((C))
+
+    A((A)) --> D((D))
+    B((B)) --> H((H))
+    B((B)) --> I((I))
+    C((C)) --> J((J))
+
+    D((D)) --> E((E))
+    D((D)) --> F((F))
+    D((D)) --> G((G))
+    H((H)) --> K((K))
+    I((I)) --> L((L))
+    J((J)) --> M((M))
+
+    E((E)) --> N((N))
+    F((F)) --> O((O))
+    F((F)) --> Y((Y))
+    G((G)) --> K1((K1))
+    G((G)) --> K2((K2))
+    K((K)) --> Q((Q))
+    K((K)) --> G1((G))
+    M((M)) --> S((S))
+
+    G1((G)) --> K11((K1))
+    G1((G)) --> K21((K2))
+    S((S)) --> T((T))
+
+    T((T)) --> U((U))
+    
+    U((T)) --> V((V))
+    U((T)) --> W((W))
+    
+    W((W)) --> Y1((Y))
+
+
+```
+
 ##### Navigation
 - `client_dummy_ontology.get_ancestors(term_id="S")`
 - `list(client_dummy_ontology.get_ancestors_with_distance(term_id="S"))`
@@ -87,6 +132,14 @@ client_dummy_ontology.load(file_path_ontology="./tests/resources/dummy_ontology.
 - `client_dummy_ontology.get_path_between(nodeA="Q", nodeB="B")`
 - `trajectories = client_dummy_ontology.get_trajectories_from_root(term_id="Y")`
 - `client_dummy_ontology.print_term_trajectories_tree(trajectories)`
+
+## Further steps
+If you are interested in loading an ontology from the catalog, just use the `name_id` and `format` of that specific ontology. For instance, `name_id="go"` and `format="obo"`.
+
+```bash
+client_go = ClientOntology()
+client_go.load(name_id="go", format="obo")
+```
 
 ## Contributing
 
