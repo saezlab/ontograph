@@ -333,11 +333,6 @@ class OntologyNavigator:
             Exception: If an error occurs during root term retrieval.
         """
         try:
-            # root_terms = [
-            #     term
-            #     for term in self.__ontology.terms()
-            #     if not any(term.superclasses(distance=1, with_self=False))
-            # ]
             root_terms = []
 
             for term in self.__ontology.terms():

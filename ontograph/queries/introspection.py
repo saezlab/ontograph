@@ -223,10 +223,10 @@ class OntologyIntrospection:
                 node = node.children[key]
 
         # All branches are sorted from term to root, so reverse to root-to-term
-        sorted_branches = [list(branch) for branch in trajectories]
-        root_info = sorted_branches[0][0]
+        branch_lists = [list(branch) for branch in trajectories]
+        root_info = branch_lists[0][0]
         root = Node(root_info['id'], root_info['name'], root_info['distance'])
-        for branch in sorted_branches:
+        for branch in branch_lists:
             insert_branch(root, branch[1:])  # skip root itself, already created
         return root
 

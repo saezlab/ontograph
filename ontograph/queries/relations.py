@@ -83,18 +83,9 @@ class OntologyRelations:
             Exception: If an error occurs during parent lookup.
         """
         try:
-            parentsA = {
-                parent.id
-                for parent in self.__navigator.get_term(nodeA).superclasses(
-                    distance=1, with_self=False
-                )
-            }
-            parentsB = {
-                parent.id
-                for parent in self.__navigator.get_term(nodeB).superclasses(
-                    distance=1, with_self=False
-                )
-            }
+            parentsA = set(self.__navigator.get_parents(term_id=nodeA))
+            parentsB = set(self.__navigator.get_parents(term_id=nodeB))
+
             # Siblings must not be the same node and must share at least one parent
             return nodeA != nodeB and bool(parentsA & parentsB)
         except Exception as e:
