@@ -70,7 +70,8 @@ def test_get_children_basic(navigator):
 
 
 def test_get_children_no_children(navigator):
-    # Assuming "Y" has no children in dummy_ontology
+    # This test assumes "Y" has no children in dummy_ontology.
+    # If the ontology changes and "Y" gains children, update this test to use a term guaranteed to have no children.
     children = navigator.get_children('Y')
     assert children == []
 
