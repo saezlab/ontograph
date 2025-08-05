@@ -72,12 +72,15 @@ def test_is_ancestor_invalid_id(dummy_relations):
     assert dummy_relations.is_ancestor('invalid', 'child') is False
 
 
+def raise_runtime_error(*a, **kw):
+    raise RuntimeError('fail')
+
 def test_is_ancestor_exception(dummy_relations, monkeypatch):
     # Patch get_ancestors to raise Exception
     monkeypatch.setattr(
         dummy_relations._OntologyRelations__navigator,
         'get_ancestors',
-        lambda *a, **kw: (_ for _ in ()).throw(RuntimeError('fail')),
+        raise_runtime_error,
     )
     with pytest.raises(RuntimeError):
         dummy_relations.is_ancestor('A', 'D')
