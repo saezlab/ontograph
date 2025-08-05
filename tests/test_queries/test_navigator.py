@@ -42,7 +42,6 @@ def navigator(dummy_ontology):
 
 # ---- Function: __get_term()
 def test_get_term_valid_id(navigator):
-    # Accessing the private method via name mangling
     term = navigator.get_term(term_id='G')
     assert term.id == 'G'
 

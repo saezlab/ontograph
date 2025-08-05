@@ -539,15 +539,15 @@ class ClientOntology:
             ancestor_node=ancestor_node,
         )
 
-    def is_sibling(self, nodeA: str, nodeB: str) -> bool:
+    def is_sibling(self, node_a: str, node_b: str) -> bool:
         """Check if two terms are siblings.
 
         Args:
-            nodeA (str): First term ID.
-            nodeB (str): Second term ID.
+            node_a (str): First term ID.
+            node_b (str): Second term ID.
 
         Returns:
-            bool: True if nodeA and nodeB are siblings.
+            bool: True if node_a and node_b are siblings.
 
         Example:
             >>> client = ClientOntology()
@@ -555,7 +555,7 @@ class ClientOntology:
             >>> client.is_sibling("E", "F")
             True
         """
-        return self._relations.is_sibling(nodeA=nodeA, nodeB=nodeB)
+        return self._relations.is_sibling(node_a=node_a, node_b=node_b)
 
     def get_common_ancestors(self, node_ids: list[str]) -> set:
         """Get common ancestors of multiple terms.
@@ -610,12 +610,12 @@ class ClientOntology:
         """
         return self._introspection.get_distance_from_root(term_id=term_id)
 
-    def get_path_between(self, nodeA: str, nodeB: str) -> list[dict]:
+    def get_path_between(self, node_a: str, node_b: str) -> list[dict]:
         """Get the path between two terms.
 
         Args:
-            nodeA (str): Start term ID.
-            nodeB (str): End term ID.
+            node_a (str): Start term ID.
+            node_b (str): End term ID.
 
         Returns:
             list[dict]: List of path steps.
@@ -628,7 +628,9 @@ class ClientOntology:
             >>> client.get_path_between("N", "C")
             []
         """
-        return self._introspection.get_path_between(nodeA=nodeA, nodeB=nodeB)
+        return self._introspection.get_path_between(
+            node_a=node_a, node_b=node_b
+        )
 
     def get_trajectories_from_root(self, term_id: str) -> list[dict]:
         """Get all trajectories from the root to a term.

@@ -69,12 +69,12 @@ class OntologyRelations:
             logger.error(f'Error checking descendant relationship: {e}')
             raise
 
-    def is_sibling(self, nodeA: str, nodeB: str) -> bool:
+    def is_sibling(self, node_a: str, node_b: str) -> bool:
         """Determine if two nodes are siblings (share at least one parent).
 
         Args:
-            nodeA (str): The ID of the first node.
-            nodeB (str): The ID of the second node.
+            node_a (str): The ID of the first node.
+            node_b (str): The ID of the second node.
 
         Returns:
             bool: True if the nodes are siblings (not the same node and share at least one parent), False otherwise.
@@ -83,11 +83,11 @@ class OntologyRelations:
             Exception: If an error occurs during parent lookup.
         """
         try:
-            parentsA = set(self.__navigator.get_parents(term_id=nodeA))
-            parentsB = set(self.__navigator.get_parents(term_id=nodeB))
+            parentsA = set(self.__navigator.get_parents(term_id=node_a))
+            parentsB = set(self.__navigator.get_parents(term_id=node_b))
 
             # Siblings must not be the same node and must share at least one parent
-            return nodeA != nodeB and bool(parentsA & parentsB)
+            return node_a != node_b and bool(parentsA & parentsB)
         except Exception as e:
             logger.error(f'Error checking sibling relationship: {e}')
             raise

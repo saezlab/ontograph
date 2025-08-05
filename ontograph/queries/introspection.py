@@ -65,12 +65,12 @@ class OntologyIntrospection:
 
         return distance
 
-    def get_path_between(self, nodeA: str, nodeB: str) -> list[dict]:
+    def get_path_between(self, node_a: str, node_b: str) -> list[dict]:
         """Finds the trajectory (path) between two ontology terms if there is an ancestor-descendant relationship.
 
         Args:
-            nodeA (str): The ID of the first term.
-            nodeB (str): The ID of the second term.
+            node_a (str): The ID of the first term.
+            node_b (str): The ID of the second term.
 
         Returns:
             list[dict]: The path as a list of dictionaries with 'id' and 'distance' keys, or an empty list if no path exists.
@@ -79,15 +79,15 @@ class OntologyIntrospection:
             Exception: If an unexpected error occurs during path calculation.
         """
         if self.__relations.is_ancestor(
-            ancestor_node=nodeA, descendant_node=nodeB
+            ancestor_node=node_a, descendant_node=node_b
         ):
-            start, end, step = nodeA, nodeB, 1
+            start, end, step = node_a, node_b, 1
         elif self.__relations.is_ancestor(
-            ancestor_node=nodeB, descendant_node=nodeA
+            ancestor_node=node_b, descendant_node=node_a
         ):
-            start, end, step = nodeB, nodeA, 1
-        elif nodeA == nodeB:
-            return [{'id': nodeA, 'distance': 0}]
+            start, end, step = node_b, node_a, 1
+        elif node_a == node_b:
+            return [{'id': node_a, 'distance': 0}]
         else:
             return []
 
