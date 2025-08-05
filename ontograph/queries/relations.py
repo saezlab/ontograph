@@ -101,7 +101,9 @@ class OntologyRelations:
             logger.error(f'Error checking sibling relationship: {e}')
             raise
 
-    def _get_distance_to_ancestor(self, node: str, ancestor: str) -> int | float:
+    def _get_distance_to_ancestor(
+        self, node: str, ancestor: str
+    ) -> int | float:
         """Calculate the shortest distance from a node to a specified ancestor.
 
         Args:
