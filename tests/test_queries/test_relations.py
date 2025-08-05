@@ -111,7 +111,7 @@ def test_is_descendant_exception(dummy_relations, monkeypatch):
     monkeypatch.setattr(
         dummy_relations._OntologyRelations__navigator,
         'get_descendants',
-        lambda *a, **kw: (_ for _ in ()).throw(RuntimeError('fail')),
+        raise_runtime_error,
     )
     with pytest.raises(RuntimeError):
         dummy_relations.is_descendant('D', 'A')
