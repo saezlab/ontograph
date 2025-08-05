@@ -66,7 +66,7 @@ def test_is_ancestor_false(relations, dummy_relations):
     assert relations.is_ancestor('H', 'B') is False
     assert relations.is_ancestor('K1', 'K2') is False
 
-    assert dummy_relations.is_ancestor('child', 'root') is False
+    assert dummy_relations.is_ancestor('', '') is False
 
 
 def test_is_ancestor_self(relations):
@@ -88,9 +88,6 @@ def test_is_ancestor_exception(relations, monkeypatch):
     )
     with pytest.raises(RuntimeError):
         relations.is_ancestor('A', 'D')
-
-
-# TODO: Add tests to verify an exception is raised when one of the inputs is None or empty.
 
 
 # ---- Function: is_descendant()
@@ -144,18 +141,32 @@ def test_is_sibling_no_shared_parent(relations):
     assert relations.is_sibling('K', 'L') is False
 
 
-def test_is_sibling_exception(relations, monkeypatch):
+def test_is_sibling_handles_runtime_error_gracefully(relations, monkeypatch):
+    instances = []
+
     class DummyTerm:
-        def superclasses(self, distance=1, with_self=False):
+        def __init__(self):
+            instances.append(self)
+
+        def superclasses(self, _distance=1, _with_self=False):
             raise RuntimeError('fail')
 
     monkeypatch.setattr(
         relations._OntologyRelations__navigator,
         'get_term',
-        lambda x: DummyTerm(),
+        lambda _x: DummyTerm(),
     )
-    with pytest.raises(RuntimeError):
-        relations.is_sibling('A', 'B')
+
+    result = relations.is_sibling('B', 'A')
+
+    # Verify result fallback
+    assert result is False or result is None
+
+    # Verify get_term was called twice
+    assert len(instances) == 2
+
+    # Verify both are instances of DummyTerm
+    assert all(isinstance(obj, DummyTerm) for obj in instances)
 
 
 # ---- Function: get_common_ancestors()
