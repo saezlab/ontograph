@@ -277,9 +277,15 @@ class ProntoLoaderAdapter(OntologyLoaderPort):
             path_download = downloader.fetch_from_catalog(
                 resources=resources, catalog=self.catalog
             )
-        except Exception as err:
+        except NotImplementedError as err:
+            logger.error(f'Download functionality not implemented: {err}')
             raise NotImplementedError(
-                'Download functionality not implemented'
+                f'Download functionality not implemented: {err}'
+            ) from err
+        except Exception as err:
+            logger.exception(f'Error downloading ontology {name_id} in format {format}: {err}')
+            raise RuntimeError(
+                f'Failed to download ontology {name_id} in format {format}: {err}'
             ) from err
 
         return path_download[name_id]
