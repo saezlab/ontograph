@@ -180,7 +180,7 @@ class CatalogOntologies:
             ValueError: If the ontology or the specified format is not found in the catalog.
         """
         metadata = self.get_ontology_metadata(ontology_id, show_metadata=False)
-        if not metadata:
+        if metadata is None:
             raise ValueError(
                 f"No metadata found for ontology ID '{ontology_id}'."
             )

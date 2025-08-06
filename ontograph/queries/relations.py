@@ -70,11 +70,10 @@ class OntologyRelations:
             raise
 
     def is_sibling(self, node_a: str, node_b: str) -> bool:
-        """
-        Determine if two nodes are siblings (share at least one parent).
+        """Determine if two nodes are siblings (share at least one parent).
 
-        This method handles multiple inheritance scenarios, where nodes may have more than one parent.
         Siblings are defined as nodes that are not the same and share at least one parent (i.e., their sets of parents intersect).
+
         Args:
             node_a (str): The ID of the first node.
             node_b (str): The ID of the second node.
@@ -83,6 +82,7 @@ class OntologyRelations:
             bool: True if the nodes are siblings (not the same node and share at least one parent), False otherwise.
 
         Raises:
+            KeyError: If either node_a or node_b is not found in the ontology.
             Exception: If an error occurs during parent lookup.
         """
         try:

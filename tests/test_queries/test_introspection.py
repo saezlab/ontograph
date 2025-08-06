@@ -81,7 +81,7 @@ def test_get_path_between_ancestor_descendant(dummy_introspection):
     # C is a direct child of Z (root), path should be Z -> C
     path = dummy_introspection.get_path_between('Z', 'C')
     ids = [node['id'] for node in path]
-    print(ids)
+
     assert ids == ['Z', 'C']
 
 
@@ -89,7 +89,7 @@ def test_get_path_between_descendant_ancestor(dummy_introspection):
     # C is a direct child of Z (root), path should be Z -> C
     path = dummy_introspection.get_path_between('C', 'Z')
     ids = [node['id'] for node in path]
-    print(ids)
+
     assert ids == ['Z', 'C']
 
 
@@ -124,7 +124,7 @@ def test_get_trajectories_from_root_single_path(dummy_introspection):
     assert isinstance(trajectories, list)
     assert len(trajectories) == 1
     ids = [node['id'] for node in trajectories[0]]
-    print(ids)
+
     # Should start at F and end at root Z
     assert ids[0] == 'Z'
     assert ids[-1] == 'F'
@@ -135,7 +135,7 @@ def test_get_trajectories_from_root_multiple_paths(dummy_introspection):
     # If a term has multiple paths to root (multiple inheritance), all should be returned
     # For dummy ontology, let's assume D has two parents: A and B, both under Z
     trajectories = dummy_introspection.get_trajectories_from_root('Y')
-    print(trajectories)
+
     assert isinstance(trajectories, list)
     # Should have at least one trajectory
     assert len(trajectories) >= 1

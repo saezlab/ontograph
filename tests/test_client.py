@@ -57,7 +57,7 @@ def test_load_catalog_and_list_ontologies(client_catalog):
     # Should load catalog and list available ontologies (may be empty if no catalog present)
     client_catalog.load_catalog(force_download=False)
     ontologies = client_catalog.list_available_ontologies()
-    print(ontologies)
+
     assert isinstance(ontologies, list)
     # No assertion on content, as catalog may be empty in test env
 

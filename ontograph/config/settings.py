@@ -15,7 +15,7 @@ __all__ = [
 
 # Read package information from pyproject.toml
 _PYPROJECT_PATH = Path(__file__).parents[2] / 'pyproject.toml'
-with open(_PYPROJECT_PATH, 'r') as f:
+with open(_PYPROJECT_PATH) as f:
     _PYPROJECT = toml.load(f)
 
 # Extract package metadata

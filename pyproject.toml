@@ -177,9 +177,7 @@ ignore = [
     "E303",  # Name: too-many-blank-lines
     "E501",  # Name: line too long
     "E731",  # Name: lambda-assignment
-    "E741",  # allow I, O, l as variable names -> I is the identity matrix
-    # pyupgrade (UP)
-    "UP015"  # Name: redundant-open-modes
+    "E741"  # allow I, O, l as variable names -> I is the identity matrix
 ]
 select = [
     "B",  # flake8-bugbear

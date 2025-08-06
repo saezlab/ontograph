@@ -126,7 +126,7 @@ class OntologyNavigator:
             include_self (bool, optional): If True, include the term itself in the result. Defaults to False.
 
         Returns:
-            set[str]: A list of ancestor term IDs.
+            set[str]: A list of ancestor term IDs. None in case of having no ancestors.
 
         Raises:
             KeyError: If the term_id is not found in the ontology.
@@ -161,7 +161,7 @@ class OntologyNavigator:
             include_self (bool): Whether to include the term itself at distance 0.
 
         Returns:
-            Iterator(tuple[Term, int]): Pairs of ancestor term objects and their distance (non-negative integer).
+            Iterator(tuple[Term, int]): Pairs of ancestor term objects and their distance (negative integer).
 
         Raises:
             KeyError: If the term is not found in the ontology.
@@ -171,7 +171,7 @@ class OntologyNavigator:
             term = self.get_term(term_id)
         except KeyError:
             logger.exception(f"Term ID '{term_id}' not found in ontology.")
-            return iter([])
+            return iter(())
 
         visited = set()
         queue = deque()
@@ -246,7 +246,7 @@ class OntologyNavigator:
             include_self (bool): Whether to include the term itself at distance 0.
 
         Returns:
-            Iterator[tuple[Term, int]]: Generator of (descendant term, distance) pairs.
+            Iterator[tuple[Term, int]]: Generator of (descendant term, distance) pairs. Distance in positive numbers.
 
         Raises:
             KeyError: If the term ID is not found in the ontology.
@@ -255,7 +255,7 @@ class OntologyNavigator:
             term = self.get_term(term_id)
         except KeyError:
             logger.exception(f"Term ID '{term_id}' not found in ontology.")
-            return iter([])
+            return iter(())
 
         visited = set()
         queue = deque()

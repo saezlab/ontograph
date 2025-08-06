@@ -75,8 +75,10 @@ def test_is_ancestor_invalid_id(dummy_relations):
 def raise_runtime_error(*a, **kw):
     raise RuntimeError('fail')
 
+
 def test_is_ancestor_exception(dummy_relations, monkeypatch):
     # Patch get_ancestors to raise Exception
+    # Accessing _OntologyRelations__navigator directly is intentional for testing.
     monkeypatch.setattr(
         dummy_relations._OntologyRelations__navigator,
         'get_ancestors',
@@ -108,6 +110,7 @@ def test_is_descendant_self(dummy_relations):
 
 
 def test_is_descendant_exception(dummy_relations, monkeypatch):
+    # Accessing _OntologyRelations__navigator directly is intentional for testing.
     monkeypatch.setattr(
         dummy_relations._OntologyRelations__navigator,
         'get_descendants',

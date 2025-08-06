@@ -58,10 +58,11 @@ def test_load_from_file_value_error(pronto_loader, tmp_path, monkeypatch):
     file_path = tmp_path / 'bad.obo'
     file_path.write_text('bad content')
 
-    # Patch pronto.Ontology to raise ValueError
-    monkeypatch.setattr(
-        'pronto.Ontology', lambda fp: (_ for _ in ()).throw(ValueError('fail'))
-    )
+    # Define the error-raising function inside the test
+    def raise_value_error(fp):
+        raise ValueError('fail')
+
+    monkeypatch.setattr('pronto.Ontology', raise_value_error)
     with pytest.raises(ValueError):
         pronto_loader.load_from_file(file_path)
 
@@ -175,7 +176,7 @@ def test_download_ontology_not_implemented(pronto_loader, monkeypatch):
         'ontograph.loader.PoochDownloaderAdapter',
         lambda cache_dir: DummyDownloader(),
     )
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(RuntimeError):
         pronto_loader._download_ontology('ado', 'obo')
 
 

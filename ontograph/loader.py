@@ -283,7 +283,9 @@ class ProntoLoaderAdapter(OntologyLoaderPort):
                 f'Download functionality not implemented: {err}'
             ) from err
         except Exception as err:
-            logger.exception(f'Error downloading ontology {name_id} in format {format}: {err}')
+            logger.exception(
+                f'Error downloading ontology {name_id} in format {format}: {err}'
+            )
             raise RuntimeError(
                 f'Failed to download ontology {name_id} in format {format}: {err}'
             ) from err
