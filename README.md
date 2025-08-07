@@ -153,6 +153,3 @@ Please make sure to update tests as appropriate.
 ## License
 
 [MIT](https://choosealicense.com/licenses/mit/)
-
-- [ ] TODO: Modify this based on the license you choose.
-- [ ] TODO: Modify the LICENSE file based on the license you choose.

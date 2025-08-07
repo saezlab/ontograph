@@ -1,6 +1,7 @@
 site_name: ontograph
 site_url: https://saezlab.github.io/ontograph
 theme:
+    logo: assets/logo_ontograph.png
     name: material
     font:
         text: Lato
@@ -50,8 +51,17 @@ nav:
 
 -   Reference:
     -   API Documentation:
-        -   ontograph:
-            -   _metadata: reference/source/ontograph/_metadata-docs.md
+        -   Ontograph client:
+            -   Client Catalog: reference/source/ontograph/client-catalog.md
+            -   Client Ontology: reference/source/ontograph/client-ontology.md
+        -   Modules:
+            -   downloader: reference/source/ontograph/downloader.md
+            -   loader: reference/source/ontograph/loader.md
+            -   models: reference/source/ontograph/models.md
+            -   queries:
+                -   navigator: reference/source/ontograph/queries/navigator.md
+                -   relations: reference/source/ontograph/queries/relations.md
+                -   introspection: reference/source/ontograph/queries/introspection.md
 -   Community:
     -   Join Us: community/index.md
     -   Where to Start: community/contribute.md
@@ -66,6 +76,7 @@ markdown_extensions:
 -   attr_list
 -   md_in_html
   #----- Python Markdown Extensions
+-   pymdownx.blocks.caption
 -   pymdownx.details
 -   pymdownx.emoji:
         emoji_index: !!python/name:material.extensions.emoji.twemoji
