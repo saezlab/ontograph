@@ -1,0 +1,189 @@
+# Configuration for the ontology generation script.
+
+# --- 1. File and Data Source Settings ---
+file_paths:
+    input_dataset: ../data/in/lipids.tsv.gz
+    output_ontology: ../data/out/swisslipids.obo
+
+pandas_options:
+    separator: "\t"
+    encoding: latin-1
+
+# --- 2. Ontology Header Metadata ---
+# This information will be written to the OBO file header.
+ontology_metadata:
+    ontology: swisslipids
+    title: SwissLipids Ontology
+    description: >-
+        Ontology representing SwissLipids data, including lipid IDs,
+        classes, and parent relationships.
+    version: 1.0.0
+    creators:
+    -   SIB Swiss Institute of Bioinformatics.
+    license: CC-BY 4.0
+
+# --- 3. Column Definitions ---
+# This is the core mapping. It tells the script how to interpret each
+# column from the input TSV file.
+column_definitions:
+  # -- Core Term Properties --
+-   original_name: Lipid ID
+    new_name: lipid_id
+    type: id
+-   original_name: Name
+    new_name: name
+    type: name
+-   original_name: Synonyms*
+    new_name: synonyms
+    type: synonym
+    separator: '|' # Values are split by the pipe character
+
+  # -- Relationships / Hierarchy --
+-   original_name: Parent
+    new_name: parent_id
+    type: parent
+-   original_name: Lipid class*
+    new_name: lipid_classes_id
+    type: class
+    separator: '|'
+
+  # -- Annotation Properties (Data attached to terms) --
+-   original_name: Level
+    new_name: level
+    type: annotation
+    datatype: xsd:string
+-   original_name: Abbreviation*
+    new_name: abbreviation
+    type: annotation
+    datatype: xsd:string
+-   original_name: Components*
+    new_name: components
+    type: annotation
+    datatype: xsd:string
+-   original_name: SMILES (pH7.3)
+    new_name: smiles_ph_7_3
+    type: annotation
+    datatype: xsd:string
+-   original_name: InChI (pH7.3)
+    new_name: inchi_ph_7_3
+    type: annotation
+    datatype: xsd:string
+-   original_name: InChI key (pH7.3)
+    new_name: inchi_key_ph_7_3
+    type: annotation
+    datatype: xsd:string
+-   original_name: Formula (pH7.3)
+    new_name: formula_ph_7_3
+    type: annotation
+    datatype: xsd:string
+-   original_name: Charge (pH7.3)
+    new_name: charge_ph_7_3
+    type: annotation
+    datatype: xsd:integer
+-   original_name: Mass (pH7.3)
+    new_name: mass_ph_7_3
+    type: annotation
+    datatype: xsd:float
+-   original_name: Exact Mass (neutral form)
+    new_name: exact_mass_neutral_form
+    type: annotation
+    datatype: xsd:float
+
+  # -- Mass Spectrometry Annotations --
+-   original_name: Exact m/z of [M.]+
+    new_name: exact_mz_m_radical_cation
+    type: annotation
+    datatype: xsd:float
+-   original_name: Exact m/z of [M+H]+
+    new_name: exact_mz_m_h_pos
+    type: annotation
+    datatype: xsd:float
+-   original_name: 'Exact m/z of [M+K]+ '
+    new_name: exact_mz_m_k_pos
+    type: annotation
+    datatype: xsd:float
+-   original_name: Exact m/z of [M+Na]+
+    new_name: exact_mz_m_na_pos
+    type: annotation
+    datatype: xsd:float
+-   original_name: Exact m/z of [M+Li]+
+    new_name: exact_mz_m_li_pos
+    type: annotation
+    datatype: xsd:float
+-   original_name: Exact m/z of [M+NH4]+
+    new_name: exact_mz_m_nh4_pos
+    type: annotation
+    datatype: xsd:float
+-   original_name: Exact m/z of [M-H]-
+    new_name: exact_mz_m_h_neg
+    type: annotation
+    datatype: xsd:float
+-   original_name: Exact m/z of [M+Cl]-
+    new_name: exact_mz_m_cl_neg
+    type: annotation
+    datatype: xsd:float
+-   original_name: 'Exact m/z of [M+OAc]- '
+    new_name: exact_mz_m_oac_neg
+    type: annotation
+    datatype: xsd:float
+
+  # -- Cross-references to external databases --
+-   original_name: CHEBI
+    new_name: chebi_id
+    type: xref
+-   original_name: LIPID MAPS
+    new_name: lipid_maps_id
+    type: xref
+-   original_name: HMDB
+    new_name: hmdb_id
+    type: xref
+-   original_name: MetaNetX
+    new_name: metanetx_id
+    type: xref
+-   original_name: PMID
+    new_name: pubmed_id
+    type: xref
+
+# ------------------------------------------------------
+
+data_types:
+    # --- Identifiers and Names (as strings) ---
+    Lipid ID: string
+    Name: string
+    Abbreviation*: string
+    Synonyms*: string
+    Lipid class*: string
+    Parent: string
+    Components*: string
+
+    # --- Categorical Data ---
+    Level: category
+
+    # --- Chemical Identifiers (as strings) ---
+    SMILES (pH7.3): string
+    InChI (pH7.3): string
+    InChI key (pH7.3): string
+    Formula (pH7.3): string
+
+    # --- Numeric Data ---
+    Charge (pH7.3): Int64
+
+    # Use 'float64' for columns with decimal values.
+    Mass (pH7.3): float64
+    Exact Mass (neutral form): float64
+    Exact m/z of [M.]+: float64
+    Exact m/z of [M+H]+: float64
+    'Exact m/z of [M+K]+ ': float64
+    Exact m/z of [M+Na]+: float64
+    Exact m/z of [M+Li]+: float64
+    Exact m/z of [M+NH4]+: float64
+    Exact m/z of [M-H]-: float64
+    Exact m/z of [M+Cl]-: float64
+    'Exact m/z of [M+OAc]- ': float64
+
+    # --- Cross-References (as strings) ---
+    CHEBI: string
+    LIPID MAPS: string
+    HMDB: string
+    MetaNetX: string
+    PMID: string

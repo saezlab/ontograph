@@ -1,0 +1,48 @@
+path_file: ../data/in/lipids.tsv.gz
+
+# ---  Loading settings
+encoding: latin-1
+
+delimiter: "\t"
+
+data_types:
+    # --- Identifiers and Names (as strings) ---
+    Lipid ID: string
+    Name: string
+    Abbreviation*: string
+    Synonyms*: string
+    Lipid class*: string
+    Parent: string
+    Components*: string
+
+    # --- Categorical Data ---
+    Level: category
+
+    # --- Chemical Identifiers (as strings) ---
+    SMILES (pH7.3): string
+    InChI (pH7.3): string
+    InChI key (pH7.3): string
+    Formula (pH7.3): string
+
+    # --- Numeric Data ---
+    Charge (pH7.3): Int64
+
+    # Use 'float64' for columns with decimal values.
+    Mass (pH7.3): float64
+    Exact Mass (neutral form): float64
+    Exact m/z of [M.]+: float64
+    Exact m/z of [M+H]+: float64
+    'Exact m/z of [M+K]+ ': float64
+    Exact m/z of [M+Na]+: float64
+    Exact m/z of [M+Li]+: float64
+    Exact m/z of [M+NH4]+: float64
+    Exact m/z of [M-H]-: float64
+    Exact m/z of [M+Cl]-: float64
+    'Exact m/z of [M+OAc]- ': float64
+
+    # --- Cross-References (as strings) ---
+    CHEBI: string
+    LIPID MAPS: string
+    HMDB: string
+    MetaNetX: string
+    PMID: string
