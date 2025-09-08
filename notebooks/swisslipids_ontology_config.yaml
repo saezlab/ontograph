@@ -162,10 +162,13 @@ transformation:
 
                 # 'exact_mz_m_h_neg':
                 #     datatype: 'xsd:float'
+
                 # 'exact_mz_m_cl_neg':
                 #     datatype: 'xsd:float'
+
                 # 'exact_mz_m_oac_neg':
                 #     datatype: 'xsd:float'
+
                 lipid_classes_id:
                     datatype: xsd:string
 
