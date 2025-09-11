@@ -1,3 +1,21 @@
+"""This module provides utility functions for the ontograph library.
+
+It includes functions for handling mapping files, such as reading delimited
+files into pandas DataFrames and creating reverse mapping lookup tables (LUTs).
+These utilities are essential for translating identifiers from different
+databases to a unified format, which is a common requirement in bioinformatics
+and ontology-related workflows.
+
+The main functions provided are:
+- `load_mapping_lut`: Orchestrates the process of reading a mapping file and
+  generating a reverse mapping LUT.
+- `translate_ids`: Translates a list of term IDs using a provided mapping LUT.
+
+Internal helper functions like `_read_mapping_file` and `_create_reverse_mapping`
+support the main functionality by handling file reading and the transformation
+of data into the desired LUT format.
+"""
+
 import logging
 
 import pandas as pd
