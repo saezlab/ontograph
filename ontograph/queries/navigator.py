@@ -43,11 +43,27 @@ class OntologyNavigator:
         Raises:
             KeyError: If the term_id is not found in the ontology.
         """
-        try:
-            return self.__ontology[term_id]
-        except KeyError:
-            logger.exception(f"Term ID '{term_id}' not found in ontology.")
-            raise
+
+        return self.__ontology[term_id]
+
+    def get_terms(self, list_term_ids: list[str]) -> list[object]:
+        """Retrieve ontology term objects for a list of term IDs.
+
+        Args:
+            list_term_ids (list[str]): A list of ontology term identifiers.
+
+        Returns:
+            list[object]: A list of ontology term objects corresponding to the given IDs.
+                Terms not found in the ontology are skipped and a warning is logged for each.
+
+        """
+        terms = []
+        for term_id in list_term_ids:
+            try:
+                terms.append(self.get_term(term_id=term_id))
+            except KeyError:
+                logger.warning(f"Term ID '{term_id}' not found in ontology.")
+        return terms
 
     def get_parents(self, term_id: str, include_self: bool = False) -> list:
         """Retrieves the parent term IDs (superclasses) of a given term.
