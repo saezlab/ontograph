@@ -4,6 +4,7 @@ import pytest
 from ontograph.utils import (
     _create_reverse_mapping,
     _read_mapping_file,
+    load_mapping_lut,
 )
 
 
@@ -183,3 +184,102 @@ def test_create_reverse_mapping_only_target_column(df_with_only_target_column):
 
     assert db_names == set()
     assert reverse_map == {}
+
+
+# ---- Unit tests for load_mapping_lut
+def test_load_mapping_lut_success(sample_mapping_file):
+    """Test loading a well-formed mapping file and generating the LUT."""
+    delimiter = '\t'
+    target_column = 'col1'
+    databases_names, reverse_map = load_mapping_lut(
+        filepath=sample_mapping_file,
+        delimiter=delimiter,
+        target_column=target_column,
+    )
+
+    # The file: col1\tcol2\tcol3\n1\t2\t3\na\tb\tc
+    # Should produce:
+    # databases_names: {'col2', 'col3'}
+    # reverse_map: {'2': '1', '3': '1', 'b': 'a', 'c': 'a'}
+    expected_db_names = {'col2', 'col3'}
+    expected_reverse_map = {'2': '1', '3': '1', 'b': 'a', 'c': 'a'}
+
+    assert databases_names == expected_db_names
+    assert reverse_map == expected_reverse_map
+
+
+def test_load_mapping_lut_file_not_found():
+    """Test that FileNotFoundError is raised for a non-existent file."""
+    with pytest.raises(FileNotFoundError):
+        load_mapping_lut(
+            filepath='non_existent_file.tsv',
+            delimiter='\t',
+            target_column='col1',
+        )
+
+
+def test_load_mapping_lut_empty_file(empty_mapping_file):
+    """Test that EmptyDataError is raised for an empty file."""
+    with pytest.raises(pd.errors.EmptyDataError):
+        load_mapping_lut(
+            filepath=empty_mapping_file, delimiter='\t', target_column='col1'
+        )
+
+
+def test_load_mapping_lut_non_existent_target_column(sample_mapping_file):
+    """Test that KeyError is raised for a non-existent target column."""
+    with pytest.raises(KeyError):
+        load_mapping_lut(
+            filepath=sample_mapping_file,
+            delimiter='\t',
+            target_column='non_existent_col',
+        )
+
+
+def test_load_mapping_lut_incorrect_delimiter(sample_mapping_file):
+    """Test that KeyError is raised when delimiter is incorrect (columns not parsed)."""
+    # Using comma delimiter on a tab-separated file will result in a single column
+    with pytest.raises(KeyError):
+        load_mapping_lut(
+            filepath=sample_mapping_file, delimiter=',', target_column='col1'
+        )
+
+
+@pytest.fixture
+def header_only_mapping_file(tmp_path):
+    """Create a mapping file with only a header row."""
+    content = 'col1\tcol2\tcol3\n'
+    file_path = tmp_path / 'header_only_mapping.tsv'
+    file_path.write_text(content)
+    return str(file_path)
+
+
+def test_load_mapping_lut_file_with_only_header(header_only_mapping_file):
+    """Test with a mapping file containing only the header row."""
+    databases_names, reverse_map = load_mapping_lut(
+        filepath=header_only_mapping_file, delimiter='\t', target_column='col1'
+    )
+    # No data rows, so should be empty
+    assert databases_names == set()
+    assert reverse_map == {}
+
+
+@pytest.fixture
+def duplicate_source_mapping_file(tmp_path):
+    """Create a mapping file with duplicate source IDs mapping to different targets."""
+    content = 'target_id\tsource_A\nT1\tA1\nT2\tA1\n'
+    file_path = tmp_path / 'duplicate_source_mapping.tsv'
+    file_path.write_text(content)
+    return str(file_path)
+
+
+def test_load_mapping_lut_duplicate_source_ids(duplicate_source_mapping_file):
+    """Test that the last mapping for a duplicate source ID is kept."""
+    databases_names, reverse_map = load_mapping_lut(
+        filepath=duplicate_source_mapping_file,
+        delimiter='\t',
+        target_column='target_id',
+    )
+    # The last mapping for 'A1' should be 'T2'
+    assert databases_names == {'source_A'}
+    assert reverse_map == {'A1': 'T2'}
