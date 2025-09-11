@@ -37,9 +37,14 @@ def _read_mapping_file(filepath: str, delimiter: str) -> pd.DataFrame:
     Returns:
         A pandas DataFrame containing the file's data.
     """
-    dataframe = pd.read_table(
-        filepath_or_buffer=filepath, delimiter=delimiter, dtype=str
-    )
+    try:
+        dataframe = pd.read_table(
+            filepath_or_buffer=filepath, delimiter=delimiter, dtype=str
+        )
+    except pd.errors.EmptyDataError as e:
+        raise pd.errors.EmptyDataError(
+            f'No columns to parse from file: {filepath}'
+        ) from e
     return dataframe
 
 
