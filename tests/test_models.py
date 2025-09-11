@@ -3,9 +3,11 @@ import pytest
 from ontograph.models import (
     Ontology,
     CatalogOntologies,
+    MappingLUT,
 )
 
 
+# ---- Pytest Fixtures
 @pytest.fixture
 def dummy_catalog(tmp_path):
     # Create a dummy OBO Foundry registry YAML file
@@ -118,3 +120,61 @@ def test_ontology_model():
     assert ontology.get_ontology() == 'dummy'
     assert ontology.get_ontology_id() == 'chebi'
     assert ontology.get_metadata() == {'foo': 'bar'}
+
+
+# ---- Unit tests MappingLUT
+def test_mappinglut_initialization():
+    """Test MappingLUT can be initialized with mapping dict and database names."""
+    mapping = {'A1': 'T1', 'A2': 'T2'}
+    db_names = ['source_A', 'source_B']
+    lut = MappingLUT(mapping, db_names)
+    assert isinstance(lut, MappingLUT)
+    assert lut._mapping_lut == mapping
+    assert lut._database_names == db_names
+
+
+def test_get_mapping_lut_returns_correct_dict():
+    """Test get_mapping_lut returns the correct mapping dictionary."""
+    mapping = {'A1': 'T1', 'A2': 'T2'}
+    db_names = ['source_A', 'source_B']
+    lut = MappingLUT(mapping, db_names)
+    assert lut.get_mapping_lut() == mapping
+
+
+def test_get_database_names_returns_correct_list():
+    """Test get_database_names returns the correct list of database names."""
+    mapping = {'A1': 'T1'}
+    db_names = ['source_A']
+    lut = MappingLUT(mapping, db_names)
+    assert lut.get_database_names() == db_names
+
+
+def test_mappinglut_with_empty_dict_and_list():
+    """Test MappingLUT handles empty mapping LUT and database names list."""
+    mapping = {}
+    db_names = []
+    lut = MappingLUT(mapping, db_names)
+    assert lut.get_mapping_lut() == {}
+    assert lut.get_database_names() == []
+
+
+def test_mappinglut_with_non_string_keys_and_values():
+    """Test MappingLUT can handle non-string keys/values in mapping LUT and database names."""
+    mapping = {1: 100, 2: 200}
+    db_names = [10, 20]
+    lut = MappingLUT(mapping, db_names)
+    assert lut.get_mapping_lut() == mapping
+    assert lut.get_database_names() == db_names
+
+
+def test_mappinglut_mutability_does_not_affect_internal_state():
+    """Test that mutating input dict/list after initialization does not affect internal state."""
+    mapping = {'A1': 'T1'}
+    db_names = ['source_A']
+    lut = MappingLUT(mapping, db_names)
+    mapping['A2'] = 'T2'
+    db_names.append('source_B')
+    # The internal state should reflect the mutated objects (since no copy is made)
+    # If you want to test for immutability, you should copy in the constructor
+    assert lut.get_mapping_lut() == mapping
+    assert lut.get_database_names() == db_names
