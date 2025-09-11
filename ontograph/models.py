@@ -284,7 +284,6 @@ class MappingLUT:
         """
         self._mapping_lut = mapping_lut
         self._database_names = databases_names
-        # TODO: add tests
 
     def get_mapping_lut(self) -> dict:
         """Return the mapping lookup table.
@@ -293,7 +292,6 @@ class MappingLUT:
             dict: The mapping lookup table.
         """
         return self._mapping_lut
-        # TODO: add tests
 
     def get_database_names(self) -> list[str]:
         """Return the list of database names.
@@ -302,4 +300,3 @@ class MappingLUT:
             list[str]: The list of database names.
         """
         return self._database_names
-        # TODO: add tests
