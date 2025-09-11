@@ -63,6 +63,9 @@ def _create_reverse_mapping(
     Returns:
         A dictionary where keys are IDs from source columns and values are from the target_column.
     """
+    if dataframe.empty or target_column not in dataframe.columns:
+        return set(), {}
+
     # Ensure we only work with rows that have a target ID
     df_filtered = dataframe.dropna(subset=[target_column])
 
