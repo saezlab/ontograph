@@ -5,6 +5,7 @@ from ontograph.utils import (
     _create_reverse_mapping,
     _read_mapping_file,
     load_mapping_lut,
+    translate_ids,
 )
 
 
@@ -283,3 +284,66 @@ def test_load_mapping_lut_duplicate_source_ids(duplicate_source_mapping_file):
     # The last mapping for 'A1' should be 'T2'
     assert databases_names == {'source_A'}
     assert reverse_map == {'A1': 'T2'}
+
+
+# ---- Unit tests for translate_ids
+def test_translate_ids_with_valid_lut_and_terms():
+    """Test that terms present in the LUT are correctly translated to their target IDs."""
+    mapping_lut = {'A1': 'T1', 'A2': 'T2', 'B1': 'T1', 'B3': 'T3'}
+    terms_id = ['A1', 'A2', 'B1', 'B3']
+    expected = ['T1', 'T2', 'T1', 'T3']
+    result = translate_ids(mapping_lut, terms_id)
+    assert result == expected
+
+
+def test_translate_ids_with_mixed_terms():
+    """Test that target IDs remain unchanged and source IDs are translated."""
+    mapping_lut = {'A1': 'T1', 'A2': 'T2'}
+    terms_id = ['A1', 'T1', 'A2', 'T2']
+    expected = ['T1', 'T1', 'T2', 'T2']
+    result = translate_ids(mapping_lut, terms_id)
+    assert result == expected
+
+
+def test_translate_ids_with_untranslatable_terms():
+    """Test that untranslatable terms are skipped."""
+    mapping_lut = {'A1': 'T1', 'A2': 'T2'}
+    terms_id = ['A1', 'A2', 'X1', 'Y2']
+    expected = ['T1', 'T2']
+    result = translate_ids(mapping_lut, terms_id)
+    assert result == expected
+
+
+def test_translate_ids_with_none_lut():
+    """Test that if LUT is None, input terms are returned unchanged."""
+    terms_id = ['A1', 'A2', 'T1']
+    expected = ['A1', 'A2', 'T1']
+    result = translate_ids(None, terms_id)
+    assert result == expected
+
+
+def test_translate_ids_with_empty_lut():
+    """Test that only valid target IDs are returned when LUT is empty."""
+    mapping_lut = {}
+    terms_id = ['T1', 'A1', 'T2']
+    expected = ['T1', 'A1', 'T2']
+    result = translate_ids(mapping_lut, terms_id)
+    assert result == expected
+
+
+def test_translate_ids_with_empty_terms():
+    """Test that an empty input list returns an empty list."""
+    mapping_lut = {'A1': 'T1'}
+    terms_id = []
+    expected = []
+    result = translate_ids(mapping_lut, terms_id)
+    assert result == expected
+
+
+def test_translate_ids_with_duplicate_terms():
+    """Test that duplicate terms are handled correctly and order is preserved."""
+    mapping_lut = {'A1': 'T1', 'A2': 'T2'}
+    terms_id = ['A1', 'A1', 'A2', 'A1']
+    expected = ['T1', 'T1', 'T2', 'T1']
+    result = translate_ids(mapping_lut, terms_id)
+    assert result == expected
