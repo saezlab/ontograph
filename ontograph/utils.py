@@ -1,19 +1,14 @@
-"""This module provides utility functions for the ontograph library.
+"""This module provides utility functions for handling ontology-related mappings.
 
-It includes functions for handling mapping files, such as reading delimited
-files into pandas DataFrames and creating reverse mapping lookup tables (LUTs).
-These utilities are essential for translating identifiers from different
-databases to a unified format, which is a common requirement in bioinformatics
-and ontology-related workflows.
+It includes functions for reading delimited files into pandas DataFrames and
+creating reverse mapping lookup tables (LUTs). These utilities are essential
+for translating identifiers from various databases to a unified format, a common
+requirement in bioinformatics workflows.
 
-The main functions provided are:
-- `load_mapping_lut`: Orchestrates the process of reading a mapping file and
-  generating a reverse mapping LUT.
+The main functions are:
+- `load_mapping_lut`: Orchestrates reading a mapping file and generating the
+  reverse mapping LUT.
 - `translate_ids`: Translates a list of term IDs using a provided mapping LUT.
-
-Internal helper functions like `_read_mapping_file` and `_create_reverse_mapping`
-support the main functionality by handling file reading and the transformation
-of data into the desired LUT format.
 """
 
 import logging
@@ -28,14 +23,21 @@ logger.addHandler(logging.NullHandler())
 # ----  Utility functions for the mapping lookup table    ----
 # ------------------------------------------------------------
 def _read_mapping_file(filepath: str, delimiter: str) -> pd.DataFrame:
-    r"""Reads a delimited file into a pandas DataFrame with all columns as strings.
+    r"""Read a delimited file into a pandas DataFrame.
+
+    This function reads a file with a specified delimiter and ensures all data
+    is loaded as strings to prevent type inference issues, which is crucial for
+    handling diverse identifiers.
 
     Args:
         filepath: The path to the mapping file.
-        delimiter: The delimiter used in the file (e.g., '\\t').
+        delimiter: The delimiter used in the file (e.g., '\t' for TSV).
 
     Returns:
-        A pandas DataFrame containing the file's data.
+        A pandas DataFrame containing the data from the file.
+
+    Raises:
+        pd.errors.EmptyDataError: If the file is empty or contains no columns.
     """
     try:
         dataframe = pd.read_table(
@@ -51,17 +53,22 @@ def _read_mapping_file(filepath: str, delimiter: str) -> pd.DataFrame:
 def _create_reverse_mapping(
     dataframe: pd.DataFrame, target_column: str
 ) -> tuple[set[str], dict[str, str]]:
-    """Creates a reverse mapping dictionary (LUT) from a DataFrame.
+    """Create a reverse mapping dictionary (LUT) from a DataFrame.
 
-    It transforms the DataFrame from a wide format to a long format, creating a
-    many-to-one mapping from various source ID columns to a single target ID column.
+    This function transforms a wide-format DataFrame into a long format,
+    creating a many-to-one mapping from various source ID columns to a single
+    target ID column. It returns the set of unique source database names and
+    the mapping dictionary.
 
     Args:
         dataframe: The DataFrame containing the ID mappings.
-        target_column: The column name to map to (e.g., 'swiss_lipid_id').
+        target_column: The column name to map all other IDs to (e.g., 'lipid_id').
 
     Returns:
-        A dictionary where keys are IDs from source columns and values are from the target_column.
+        A tuple containing:
+        - A set of unique database names found in the source columns.
+        - A dictionary where keys are IDs from source columns and values are
+          the corresponding IDs from the target_column.
     """
     if dataframe.empty:
         return set(), {}
@@ -97,11 +104,12 @@ def _create_reverse_mapping(
 
 def load_mapping_lut(
     filepath: str, delimiter: str, target_column: str
-) -> dict[str, str]:
-    """Loads a mapping file and creates a reverse mapping lookup table (LUT).
+) -> tuple[set[str], dict[str, str]]:
+    """Load a mapping file and create a reverse mapping lookup table (LUT).
 
-    This is the main public function that orchestrates reading the file and
-    generating the LUT.
+    This is the main public function that orchestrates reading a mapping file
+    and generating the reverse mapping LUT, which maps various source IDs to a
+    unified target ID.
 
     Args:
         filepath: The path to the mapping file.
@@ -109,7 +117,9 @@ def load_mapping_lut(
         target_column: The name of the column containing the target IDs.
 
     Returns:
-        A dictionary mapping various source IDs to the target IDs.
+        A tuple containing:
+        - A set of unique database names found in the source columns.
+        - A dictionary mapping various source IDs to the target IDs.
     """
     # Read tabular data
     dataframe = _read_mapping_file(filepath=filepath, delimiter=delimiter)
@@ -128,21 +138,28 @@ def load_mapping_lut(
 def translate_ids(
     mapping_lut: dict[str, str] | None, terms_id: list[str]
 ) -> list[str]:
-    """Translates a list of term IDs using a mapping lookup table (LUT).
+    """Translate a list of term IDs using a mapping lookup table (LUT).
 
-    If a term ID is already a valid target ID, it is returned as-is.
-    If a term ID exists in the LUT, it is translated to the corresponding target ID.
-    If a term ID cannot be translated, a warning is logged and it is skipped.
+    This function processes a list of identifiers, translating them to a
+    target format based on the provided LUT.
+
+    - If a term is already a valid target ID, it is kept as-is.
+    - If a term is a source ID in the LUT, it is translated.
+    - If a term cannot be translated, a warning is logged and it is excluded
+      from the output.
 
     Args:
-        mapping_lut (dict[str, str] | None): The mapping lookup table. If None, terms are returned unchanged.
-        terms_id (list[str]): List of term IDs to translate.
+        mapping_lut: The mapping lookup table. If None, the original
+          list of terms is returned with a warning.
+        terms_id: A list of term IDs to translate.
 
     Returns:
-        list[str]: List of translated term IDs.
+        A list of translated term IDs.
     """
     if not mapping_lut:
-        logger.warning('Warning: Mapping LUT is not available.')
+        logger.warning(
+            'Warning: Mapping LUT is not available; returning original terms.'
+        )
         return terms_id
 
     target_values = set(mapping_lut.values())
@@ -162,7 +179,7 @@ def translate_ids(
         else:
             # Case 3: The term is not a target ID and not in the LUT.
             logger.warning(
-                f"Warning: Term '{term_id}' could not be translated."
+                f"Warning: Term '{term_id}' could not be translated and will be skipped."
             )
 
     return translated_terms
