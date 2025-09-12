@@ -141,7 +141,7 @@ def translate_ids(
     Returns:
         list[str]: List of translated term IDs.
     """
-    if mapping_lut is None or mapping_lut == {}:
+    if not mapping_lut:
         logger.warning('Warning: Mapping LUT is not available.')
         return terms_id
 
