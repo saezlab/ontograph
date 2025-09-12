@@ -50,7 +50,7 @@ def _read_mapping_file(filepath: str, delimiter: str) -> pd.DataFrame:
 
 def _create_reverse_mapping(
     dataframe: pd.DataFrame, target_column: str
-) -> dict[str, str]:
+) -> tuple[set[str], dict[str, str]]:
     """Creates a reverse mapping dictionary (LUT) from a DataFrame.
 
     It transforms the DataFrame from a wide format to a long format, creating a
