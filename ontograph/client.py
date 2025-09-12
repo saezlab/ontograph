@@ -19,8 +19,13 @@ Example:
 from pathlib import Path
 from collections.abc import Iterator
 
+from ontograph.utils import load_mapping_lut
 from ontograph.loader import ProntoLoaderAdapter
-from ontograph.models import Ontology, CatalogOntologies
+from ontograph.models import (
+    Ontology,
+    MappingLUT,
+    CatalogOntologies,
+)
 from ontograph.downloader import DownloaderPort
 from ontograph.config.settings import DEFAULT_CACHE_DIR
 from ontograph.queries.navigator import OntologyNavigator
@@ -195,6 +200,7 @@ class ClientOntology:
         """
         self._cache_dir = Path(cache_dir)
         self._ontology: Ontology | None = None
+        self._mapping_lut: MappingLUT | None = None
         self._navigator = None
         self._relations = None
         self._introspection = None
@@ -297,6 +303,72 @@ class ClientOntology:
             raise RuntimeError('Ontology not loaded. Call `load()` first.')
         return self._ontology
 
+    # ---- Utility Methods
+    def load_mapping(
+        self, filepath: str, delimiter: str = ',', target_column: str = 'target'
+    ) -> None:
+        """Load a mapping lookup table from a file.
+
+        Args:
+            filepath (str): Path to the mapping file.
+            delimiter (str, optional): Delimiter used in the file. Defaults to ",".
+            target_column (str, optional): Name of the target column in the mapping file. Defaults to "target".
+
+        Returns:
+            None
+
+        Raises:
+            FileNotFoundError: If the mapping file does not exist.
+            ValueError: If the mapping file is malformed or target_column is missing.
+
+        Example:
+            >>> client = ClientOntology()
+            >>> client.load_mapping(filepath="mapping.csv", delimiter=",", target_column="target")
+        """
+        databases_names, mapping_lut = load_mapping_lut(
+            filepath=filepath, delimiter=delimiter, target_column=target_column
+        )
+
+        self._mapping_lut = MappingLUT(
+            mapping_lut=mapping_lut, databases_names=databases_names
+        )
+        # TODO: add tests
+
+    def get_mapping_lut(self) -> dict | None:
+        """Retrieve the mapping lookup table.
+
+        Returns:
+            dict | None: The mapping lookup table if loaded, otherwise None.
+
+        Example:
+            >>> client = ClientOntology()
+            >>> client.load_mapping(filepath="mapping.csv")
+            >>> mapping = client.get_mapping_lut()
+            >>> isinstance(mapping, dict)
+            True
+        """
+        return (
+            self._mapping_lut.get_mapping_lut() if self._mapping_lut else None
+        )
+        # TODO: add tests
+
+    def mappings(self) -> list[str]:
+        """Retrieve the list of database names from the loaded mapping lookup table.
+
+        Returns:
+            list[str]: List of database names if mapping lookup table is loaded, otherwise an empty list.
+
+        Example:
+            >>> client = ClientOntology()
+            >>> client.load_mapping(filepath="mapping.csv")
+            >>> db_names = client.mappings()
+            >>> isinstance(db_names, list)
+            True
+        """
+        return (
+            self._mapping_lut.get_database_names() if self._mapping_lut else []
+        )
+
     # ---- Navigation Methods
 
     def get_term(self, term_id: str) -> object:
@@ -314,7 +386,26 @@ class ClientOntology:
             >>> client.get_term("A")
             Term('A', name='termA')
         """
+        # TODO: add tests
         return self._navigator.get_term(term_id=term_id)
+
+    def get_terms(self, list_term_ids: list[str]) -> list[object]:
+        """Retrieve multiple terms by their IDs.
+
+        Args:
+            list_term_ids (list[str]): List of term identifiers.
+
+        Returns:
+            list[object]: List of term objects corresponding to the provided IDs.
+
+        Example:
+            >>> client = ClientOntology()
+            >>> ontology = client.load(file_path_ontology="./tests/resources/dummy_ontology.obo")
+            >>> client.get_terms(["A", "B"])
+            [Term('A', name='termA'), Term('B', name='termB')]
+        """
+        # TODO: add tests
+        return self._navigator.get_terms(list_term_ids=list_term_ids)
 
     def get_parents(self, term_id: str, include_self: bool = False) -> list:
         """Get parent terms of a given term.

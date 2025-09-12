@@ -266,3 +266,37 @@ class Ontology:
             dict | None: The metadata dictionary.
         """
         return self._metadata
+
+
+class MappingLUT:
+    """Represents a mapping lookup table for Ontology IDs and associated database names.
+
+    This class stores a lookup table mapping ontology IDs to database-specific identifiers,
+    along with the names of the databases involved.
+    """
+
+    def __init__(self, mapping_lut: dict, databases_names: list[str]) -> None:
+        """Initialize the MappingLUT object.
+
+        Args:
+            mapping_lut (dict): Dictionary mapping ontology IDs to database identifiers.
+            databases_names (list[str]): List of database names.
+        """
+        self._mapping_lut = mapping_lut
+        self._database_names = databases_names
+
+    def get_mapping_lut(self) -> dict:
+        """Return the mapping lookup table.
+
+        Returns:
+            dict: The mapping lookup table.
+        """
+        return self._mapping_lut
+
+    def get_database_names(self) -> list[str]:
+        """Return the list of database names.
+
+        Returns:
+            list[str]: The list of database names.
+        """
+        return self._database_names

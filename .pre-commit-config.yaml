@@ -22,7 +22,7 @@ default_stages:
 repos:
     # Fast Python linter and formatter with auto-fix support
 -   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.12.7
+    rev: v0.13.0
     hooks:
     -   id: ruff-check
         args: [--fix, --show-fixes]
@@ -42,7 +42,7 @@ repos:
 
     # Official pre-commit-hooks for general checks
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0    # Check for updates regularly
+    rev: v6.0.0    # Check for updates regularly
     hooks:
     -   id: check-added-large-files
         stages: [pre-commit, pre-push]
@@ -71,7 +71,7 @@ repos:
 
     # Format code blocks in documentation files
 -   repo: https://github.com/asottile/blacken-docs
-    rev: 1.19.1
+    rev: 1.20.0
     hooks:
     -   id: blacken-docs
         stages: [pre-commit]
