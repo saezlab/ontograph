@@ -32,7 +32,8 @@ dependencies = [
     "pronto",
     "pooch[progress]",
     "pyyaml",
-    "appdirs>=1.4.4"
+    "appdirs>=1.4.4",
+    "python-graphblas[default]>=2025.2.0",
 ]
 description = "A lightweight Python package for loading, representing, and efficiently querying biological ontologies as graph structures."
 license = "MIT"
