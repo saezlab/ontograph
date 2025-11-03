@@ -9,7 +9,7 @@ import graphblas as gb
 from ontograph.models import Ontology, LookUpTables
 
 __all__ = [
-    'NavigatorPronto',
+    'NavigatorOntology',
 ]
 
 logger = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ logger.addHandler(logging.NullHandler())
 # --------------------------------------------------------
 # ----     OntologyNavigator Port (abstract class)    ----
 # --------------------------------------------------------
-class NavigatorPronto(ABC):
+class NavigatorOntology(ABC):
     """Abstract navigator for traversing and querying ontology term relationships."""
 
     def __init__(self, ontology: 'Ontology') -> None:
@@ -90,7 +90,7 @@ class NavigatorPronto(ABC):
 # ---------------------------------------------------------
 # ----     NavigatorPronto adapter (concrete class)    ----
 # ---------------------------------------------------------
-class NavigatorPronto(NavigatorPronto):
+class NavigatorPronto(NavigatorOntology):
     """Navigator for traversing and querying ontology term relationships.
 
     This class provides methods to retrieve parent, ancestor, descendant, sibling, and root terms
@@ -431,7 +431,7 @@ class NavigatorPronto(NavigatorPronto):
 # ------------------------------------------------------------
 # ----     NavigatorGraphblas adapter (concrete class)    ----
 # ------------------------------------------------------------
-class NavigatorGraphblas(NavigatorPronto):
+class NavigatorGraphblas(NavigatorOntology):
     def __init__(self, ontology: Ontology, lookup_tables: LookUpTables) -> None:
         self.__ontology = ontology
 

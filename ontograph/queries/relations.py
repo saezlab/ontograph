@@ -2,10 +2,10 @@ from abc import ABC, abstractmethod
 import logging
 from collections import deque
 
-from ontograph.queries.navigator import NavigatorPronto as _OntologyNavigator
+from ontograph.queries.navigator import NavigatorOntology as _OntologyNavigator
 
 __all__ = [
-    'RelationsPronto',
+    'RelationsOntology',
 ]
 
 logger = logging.getLogger(__name__)
@@ -15,7 +15,7 @@ logger.addHandler(logging.NullHandler())
 # --------------------------------------------------------
 # ----     OntologyRelations Port (abstract class)    ----
 # --------------------------------------------------------
-class RelationsPronto(ABC):
+class RelationsOntology(ABC):
     """Abstract class for querying relationships between ontology terms."""
 
     def __init__(self, navigator: _OntologyNavigator) -> None:
@@ -50,7 +50,7 @@ class RelationsPronto(ABC):
 # ---------------------------------------------------------
 # ----     RelationsPronto adapter (abstract class)    ----
 # ---------------------------------------------------------
-class RelationsPronto(RelationsPronto):
+class RelationsPronto(RelationsOntology):
     """Provides methods for querying relationships between ontology terms.
 
     Includes ancestor, descendant, sibling checks, and common ancestor computations.
@@ -256,7 +256,7 @@ class RelationsPronto(RelationsPronto):
 # ------------------------------------------------------------
 # ----     RelationsGraphblas adapter (abstract class)    ----
 # ------------------------------------------------------------
-class RelationsGraphblas(RelationsPronto):
+class RelationsGraphblas(RelationsOntology):
     def __init__(
         self, navigator: _OntologyNavigator, lookup_tables: object
     ) -> None:

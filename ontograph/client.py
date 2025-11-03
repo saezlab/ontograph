@@ -35,8 +35,14 @@ from ontograph.models import (
 )
 from ontograph.downloader import DownloaderPort
 from ontograph.config.settings import DEFAULT_CACHE_DIR
-from ontograph.queries.navigator import NavigatorPronto, NavigatorGraphblas
-from ontograph.queries.relations import RelationsPronto, RelationsGraphblas
+from ontograph.queries.navigator import (
+    NavigatorPronto,
+    NavigatorGraphblas,
+)
+from ontograph.queries.relations import (
+    RelationsPronto,
+    RelationsGraphblas,
+)
 from ontograph.utils.pronto_utils import extract_terms
 from ontograph.queries.introspection import (
     IntrospectionPronto,
@@ -225,7 +231,9 @@ class ClientOntology:
         self._relations = None
         self._introspection = None
 
-    def __create_graphblas_ontology(self, ontology, include_obsolete=False):
+    def __create_graphblas_ontology(
+        self, ontology: Ontology, include_obsolete: bool = False
+    ) -> tuple[LookUpTables, Graph]:
         terms = extract_terms(
             ontology=ontology, include_obsolete=include_obsolete
         )
@@ -263,11 +271,30 @@ class ClientOntology:
         return lookup_tables, graph
 
     def _detect_source_type(self, source: str) -> str:
-        """Determine whether 'source' is a file, an OBO Foundry ID, or a URL.
-        Priority order:
-            1. Local file path
-            2. OBO Foundry identifier
-            3. Other URL
+        """Detect the type of ontology source: file path, OBO Foundry ID, or URL.
+
+        This method checks the input string and determines its type in the following priority order:
+        1. Local file path
+        2. OBO Foundry identifier (alphanumeric, underscore, or hyphen; no slashes or dots)
+        3. HTTP/HTTPS URL
+
+        Args:
+            source (str): The ontology source string to check. Can be a file path, OBO Foundry ID, or URL.
+
+        Returns:
+            str: The detected source type. One of 'file', 'obo', or 'url'.
+
+        Raises:
+            ValueError: If the source type cannot be determined.
+
+        Example:
+            >>> client = ClientOntology()
+            >>> client._detect_source_type("./ontology.obo")
+            'file'
+            >>> client._detect_source_type("go")
+            'obo'
+            >>> client._detect_source_type("https://example.com/ontology.obo")
+            'url'
         """
         path = Path(source)
 
@@ -364,9 +391,35 @@ class ClientOntology:
         self,
         source: str,
         downloader: DownloaderPort = None,
-        include_obsolete=False,
-        backend='pronto',
-    ):
+        include_obsolete: bool = False,
+        backend: str = 'pronto',
+    ) -> None:
+        """Load an ontology from a file path, URL, or OBO Foundry catalog.
+
+        This method detects the source type and loads the ontology using the appropriate strategy:
+        - Local file path
+        - URL
+        - OBO Foundry catalog identifier
+
+        It also initializes query adapters for navigation, relations, and introspection based on the selected backend.
+
+        Args:
+            source (str): Path to the ontology file, URL, or OBO Foundry identifier.
+            downloader (DownloaderPort, optional): Downloader adapter for remote files. Defaults to None.
+            include_obsolete (bool, optional): If True, include obsolete terms when building GraphBLAS structures. Defaults to False.
+            backend (str, optional): Backend for queries ('pronto' or 'graphblas'). Defaults to 'pronto'.
+
+        Raises:
+            FileNotFoundError: If the ontology source cannot be found as a file, URL, or catalog entry.
+            ValueError: If an unknown backend is specified.
+
+        Returns:
+            None
+
+        Example:
+            >>> client = ClientOntology()
+            >>> client.load(source="./tests/resources/dummy_ontology.obo")
+        """
         logger.info(f'Loading ontology from source: {source} ...')
         loader = ProntoLoaderAdapter(cache_dir=self._cache_dir)
 
@@ -431,8 +484,16 @@ class ClientOntology:
 
         logger.info('Ontology loading complete.')
 
-    def _initialize_queries(self, backend) -> None:
-        """Initialize query adapters for navigation, relations, and introspection."""
+    def _initialize_queries(self, backend: str) -> None:
+        """Initializes query adapters for navigation, relations, and introspection based on the specified backend.
+
+        Args:
+            backend (str): The backend to use for query adapters. Supported values are 'pronto' and 'graphblas'.
+
+        Raises:
+            KeyError: If the specified backend is not supported.
+
+        """
 
         if backend == 'pronto':
             self._navigator = NavigatorPronto(ontology=self._get_ontology)

@@ -156,7 +156,15 @@ class ProntoLoaderAdapter(OntologyLoaderPort):
             )
             return None
 
-    def find_file_encoding(self, file):
+    def find_file_encoding(self, file: str | Path) -> str | None:
+        """Detect the encoding of a file.
+
+        Args:
+            file (str | Path): Path to the file whose encoding should be detected.
+
+        Returns:
+            str | None: The detected encoding, or None if it cannot be determined.
+        """
         result = from_path(file).best()
         return result.encoding
 

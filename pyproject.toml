@@ -159,7 +159,11 @@ exclude = [
     "docs/_build",
     "tests/",
     "test_*.py",
-    "*/test_*.py"
+    "*/test_*.py",
+    "notebooks/",
+    "examples/",
+    "*.ipynb",
+    "**/*.ipynb"
 ]
 ignore = [
     # flake8-bugbear (B)

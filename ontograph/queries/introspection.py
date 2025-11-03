@@ -2,11 +2,12 @@ from abc import ABC, abstractmethod
 import logging
 from collections import deque
 
-from ontograph.queries.navigator import NavigatorPronto
-from ontograph.queries.relations import RelationsPronto
+from ontograph.models import LookUpTables
+from ontograph.queries.navigator import NavigatorOntology
+from ontograph.queries.relations import RelationsPronto, RelationsOntology
 
 __all__ = [
-    'OntologyIntrospection',
+    'IntrospectionOntology',
 ]
 
 logger = logging.getLogger(__name__)
@@ -16,10 +17,12 @@ logger.addHandler(logging.NullHandler())
 # ------------------------------------------------------------
 # ----     OntologyIntrospection Port (abstract class)    ----
 # ------------------------------------------------------------
-class OntologyIntrospection(ABC):
+class IntrospectionOntology(ABC):
     """Abstract class for ontology introspection utilities."""
 
-    def __init__(self, navigator, relations) -> None:
+    def __init__(
+        self, navigator: NavigatorOntology, relations: RelationsOntology
+    ) -> None:
         self._navigator = navigator
         self._relations = relations
 
@@ -60,14 +63,14 @@ class OntologyIntrospection(ABC):
 # -------------------------------------------------------------
 # ----     IntrospectionPronto adapter (concrete class)    ----
 # -------------------------------------------------------------
-class IntrospectionPronto(OntologyIntrospection):
+class IntrospectionPronto(IntrospectionOntology):
     """Provides introspection utilities for ontology graphs.
 
     Includes methods for calculating distances, paths, and ancestor trajectories.
     """
 
     def __init__(
-        self, navigator: NavigatorPronto, relations: RelationsPronto
+        self, navigator: NavigatorOntology, relations: RelationsPronto
     ) -> None:
         """Initialize the introspection utility.
 
@@ -242,8 +245,8 @@ class IntrospectionPronto(OntologyIntrospection):
                 print(f'{node["id"]}: {node["name"]}')
             return
         # Otherwise, use tree printing
-        root = OntologyIntrospection._build_tree_from_trajectories(trajectories)
-        OntologyIntrospection._print_ascii_tree(root)
+        root = IntrospectionOntology._build_tree_from_trajectories(trajectories)
+        IntrospectionOntology._print_ascii_tree(root)
 
     @staticmethod
     def _build_tree_from_trajectories(trajectories: list[dict]) -> object:
@@ -306,7 +309,7 @@ class IntrospectionPronto(OntologyIntrospection):
             print_ascii_tree(child, '', is_last_child)
 
 
-class IntrospectionGraphblas(OntologyIntrospection):
+class IntrospectionGraphblas(IntrospectionOntology):
     """Provides introspection utilities for ontology graphs using GraphBLAS.
 
     Includes methods for calculating distances, paths, and ancestor trajectories.
@@ -314,22 +317,23 @@ class IntrospectionGraphblas(OntologyIntrospection):
 
     def __init__(
         self,
-        navigator: NavigatorPronto,
-        relations: RelationsPronto,
-        lookup_tables,
+        navigator: NavigatorOntology,
+        relations: RelationsOntology,
+        lookup_tables: LookUpTables,
     ) -> None:
         """Initialize the introspection utility.
 
         Args:
-            navigator (OntologyNavigator): The ontology navigator.
-            relations (OntologyRelations): The ontology relations.
+            navigator (NavigatorPronto): The ontology navigator.
+            relations (RelationsPronto): The ontology relations.
+            lookup_tables (LookUpTables): Lookup tables for term/index/description mapping.
         """
         self.__navigator = navigator
         self.__relations = relations
         self.lookup_tables = lookup_tables
         self.matrices_container = navigator.matrices_container
 
-    def get_distance_from_root(self, term_id):
+    def get_distance_from_root(self, term_id: str) -> int:
         """Calculate the distance from the given term to the root node(s) of the ontology.
 
         Parameters
@@ -361,7 +365,7 @@ class IntrospectionGraphblas(OntologyIntrospection):
 
         return max_distance
 
-    def get_path_between(self, node_a, node_b):
+    def get_path_between(self, node_a: str, node_b: str) -> list:
         """Find the shortest path between two nodes in the ontology.
 
         Parameters
@@ -403,7 +407,7 @@ class IntrospectionGraphblas(OntologyIntrospection):
         # BFS to find shortest path
 
         queue = deque([[start_idx]])
-        visited = set([start_idx])
+        visited = {start_idx}
 
         while queue:
             path = queue.popleft()

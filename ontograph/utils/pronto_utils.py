@@ -1,4 +1,9 @@
+import logging
+
 from pronto import Ontology
+
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
 
 
 def extract_terms(ontology: Ontology, include_obsolete: bool = False) -> list:
