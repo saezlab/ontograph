@@ -155,8 +155,8 @@ class ProntoLoaderAdapter(OntologyLoaderPort):
                 f'Could not extract ontology ID from metadata: {str(e)}'
             )
             return None
-        
-    def find_file_encoding(self,file):
+
+    def find_file_encoding(self, file):
         result = from_path(file).best()
         return result.encoding
 
@@ -183,7 +183,9 @@ class ProntoLoaderAdapter(OntologyLoaderPort):
 
         logger.debug(f'Parsing ontology file with Pronto: {path_file}')
         try:
-            ontology: pronto.Ontology = pronto.Ontology(path_file, encoding=self.find_file_encoding(path_file))
+            ontology: pronto.Ontology = pronto.Ontology(
+                path_file, encoding=self.find_file_encoding(path_file)
+            )
         except (TypeError, ValueError) as e:
             error_msg = f'Failed to load ontology from {path_file}: {str(e)}'
             logger.exception(error_msg)

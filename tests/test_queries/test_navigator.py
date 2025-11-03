@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 
 from ontograph.loader import ProntoLoaderAdapter
-from ontograph.queries.navigator import OntologyNavigator
+from ontograph.queries.navigator import NavigatorPronto
 
 
 # -----------------------------------
@@ -32,7 +32,7 @@ def dummy_ontology(tmp_path):
 
 @pytest.fixture
 def navigator(dummy_ontology):
-    return OntologyNavigator(dummy_ontology)
+    return NavigatorPronto(dummy_ontology)
 
 
 # -----------------------------------
@@ -311,7 +311,7 @@ def test_get_root_no_roots(monkeypatch, navigator):
             return [object()]  # Always has a superclass
 
     monkeypatch.setattr(
-        navigator._OntologyNavigator__ontology, 'terms', lambda: [DummyTerm()]
+        navigator._NavigatorPronto__ontology, 'terms', lambda: [DummyTerm()]
     )
     roots = navigator.get_root()
     assert roots == []
@@ -320,7 +320,7 @@ def test_get_root_no_roots(monkeypatch, navigator):
 def test_get_root_exception(monkeypatch, navigator):
     # Monkeypatch __ontology.terms to raise an exception
     monkeypatch.setattr(
-        navigator._OntologyNavigator__ontology,
+        navigator._NavigatorPronto__ontology,
         'terms',
         lambda: (_ for _ in () if False),
     )

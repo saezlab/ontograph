@@ -1,11 +1,11 @@
-import logging
 from abc import ABC, abstractmethod
+import logging
 from collections import deque
 
-from ontograph.queries.navigator import OntologyNavigator as _OntologyNavigator
+from ontograph.queries.navigator import NavigatorPronto as _OntologyNavigator
 
 __all__ = [
-    'OntologyRelations',
+    'RelationsPronto',
 ]
 
 logger = logging.getLogger(__name__)
@@ -15,10 +15,10 @@ logger.addHandler(logging.NullHandler())
 # --------------------------------------------------------
 # ----     OntologyRelations Port (abstract class)    ----
 # --------------------------------------------------------
-class OntologyRelations(ABC):
+class RelationsPronto(ABC):
     """Abstract class for querying relationships between ontology terms."""
 
-    def __init__(self, navigator) -> None:
+    def __init__(self, navigator: _OntologyNavigator) -> None:
         self._navigator = navigator
 
     @abstractmethod
@@ -46,10 +46,11 @@ class OntologyRelations(ABC):
         """Finds the lowest common ancestors among a set of nodes."""
         pass
 
+
 # ---------------------------------------------------------
 # ----     RelationsPronto adapter (abstract class)    ----
 # ---------------------------------------------------------
-class RelationsPronto(OntologyRelations):
+class RelationsPronto(RelationsPronto):
     """Provides methods for querying relationships between ontology terms.
 
     Includes ancestor, descendant, sibling checks, and common ancestor computations.
@@ -251,22 +252,25 @@ class RelationsPronto(OntologyRelations):
         }
         return lowest_common
 
+
 # ------------------------------------------------------------
 # ----     RelationsGraphblas adapter (abstract class)    ----
 # ------------------------------------------------------------
-class RelationsGraphblas(OntologyRelations):
-    def __init__(self, navigator: _OntologyNavigator, lookup_tables) -> None:
+class RelationsGraphblas(RelationsPronto):
+    def __init__(
+        self, navigator: _OntologyNavigator, lookup_tables: object
+    ) -> None:
         """Initialize OntologyRelations.
 
         Args:
             navigator (_OntologyNavigator): The ontology navigator instance.
+            lookup_tables (object): Lookup tables for term indices and relationships.
         """
         self.__navigator = navigator
         self.lookup_tables = lookup_tables
 
-    def is_ancestor(self, ancestor_node, descendant_node):
-        """
-        Check if `ancestor_node` is an ancestor of `descendant_node`.
+    def is_ancestor(self, ancestor_node: str, descendant_node: str) -> bool:
+        """Check if `ancestor_node` is an ancestor of `descendant_node`.
 
         Parameters
         ----------
@@ -275,24 +279,24 @@ class RelationsGraphblas(OntologyRelations):
         descendant_node : str
             Candidate descendant term ID.
 
-        Returns
+        Returns:
         -------
         bool
             True if `ancestor_node` is an ancestor of `descendant_node`, else False.
         """
         if descendant_node not in self.lookup_tables.get_lut_term_to_index():
-            raise KeyError(f"Unknown term ID: {descendant_node}")
+            raise KeyError(f'Unknown term ID: {descendant_node}')
         if ancestor_node not in self.lookup_tables.get_lut_term_to_index():
-            raise KeyError(f"Unknown term ID: {ancestor_node}")
-        
+            raise KeyError(f'Unknown term ID: {ancestor_node}')
+
         # Retrieve ancestors of the descendant
-        ancestors = set(self.__navigator.get_ancestors(descendant_node, include_self=False))
+        ancestors = set(
+            self.__navigator.get_ancestors(descendant_node, include_self=False)
+        )
         return ancestor_node in ancestors
 
-    
-    def is_descendant(self, descendant_node, ancestor_node):
-        """
-        Check if `descendant_node` is a descendant of `ancestor_node`.
+    def is_descendant(self, descendant_node: str, ancestor_node: str) -> bool:
+        """Check if `descendant_node` is a descendant of `ancestor_node`.
 
         Parameters
         ----------
@@ -301,24 +305,24 @@ class RelationsGraphblas(OntologyRelations):
         ancestor_node : str
             Candidate ancestor term ID.
 
-        Returns
+        Returns:
         -------
         bool
             True if `descendant_node` is a descendant of `ancestor_node`, else False.
         """
         if ancestor_node not in self.lookup_tables.get_lut_term_to_index():
-            raise KeyError(f"Unknown term ID: {ancestor_node}")
+            raise KeyError(f'Unknown term ID: {ancestor_node}')
         if descendant_node not in self.lookup_tables.get_lut_term_to_index():
-            raise KeyError(f"Unknown term ID: {descendant_node}")
-        
+            raise KeyError(f'Unknown term ID: {descendant_node}')
+
         # Retrieve descendants of the ancestor
-        descendants = set(self.get_descendants(ancestor_node, include_self=False))
+        descendants = set(
+            self.get_descendants(ancestor_node, include_self=False)
+        )
         return descendant_node in descendants
 
-    
     def is_sibling(self, node_a: str, node_b: str) -> bool:
-        """
-        Check if two nodes are siblings (i.e., share at least one common parent).
+        """Check if two nodes are siblings (i.e., share at least one common parent).
 
         Parameters
         ----------
@@ -327,7 +331,7 @@ class RelationsGraphblas(OntologyRelations):
         node_b : str
             Second node (term ID).
 
-        Returns
+        Returns:
         -------
         bool
             True if both nodes share at least one parent; False otherwise.
@@ -335,9 +339,9 @@ class RelationsGraphblas(OntologyRelations):
         # Validate existence
         lut = self.lookup_tables.get_lut_term_to_index()
         if node_a not in lut:
-            raise KeyError(f"Unknown term ID: {node_a}")
+            raise KeyError(f'Unknown term ID: {node_a}')
         if node_b not in lut:
-            raise KeyError(f"Unknown term ID: {node_b}")
+            raise KeyError(f'Unknown term ID: {node_b}')
 
         # Step 1: Get parents for both nodes
         parents_a = set(self.get_parents(node_a, include_self=False))
@@ -349,10 +353,8 @@ class RelationsGraphblas(OntologyRelations):
         # Step 3: Return True if they share any parent
         return len(shared_parents) > 0
 
-    
-    def get_common_ancestors(self, node_ids):
-        """
-        Return the common ancestors of a list of terms.
+    def get_common_ancestors(self, node_ids: list[str]) -> set:
+        """Return the common ancestors of a list of terms.
 
         Parameters
         ----------
@@ -361,7 +363,7 @@ class RelationsGraphblas(OntologyRelations):
         include_self : bool
             Whether to include the starting nodes themselves in the ancestor sets.
 
-        Returns
+        Returns:
         -------
         List[str]
             List of term IDs that are common ancestors to all input terms.
@@ -370,7 +372,9 @@ class RelationsGraphblas(OntologyRelations):
             return []
 
         # get ancestors for the first node
-        common_ancestors = set(self.get_ancestors(node_ids[0], include_self=False))
+        common_ancestors = set(
+            self.get_ancestors(node_ids[0], include_self=False)
+        )
 
         # intersect with ancestors of the rest
         for term_id in node_ids[1:]:
@@ -383,10 +387,9 @@ class RelationsGraphblas(OntologyRelations):
 
         return set(common_ancestors)
 
-    
-    def get_lowest_common_ancestors(self, node_ids):
-        """
-        Return the lowest common ancestor(s) of a list of terms. 
+    def get_lowest_common_ancestors(self, node_ids: list[str]) -> list[str]:
+        """Return the lowest common ancestor(s) of a list of terms.
+
         Lowest = closest to the given terms.
 
         Parameters
@@ -396,31 +399,38 @@ class RelationsGraphblas(OntologyRelations):
         include_self : bool
             Whether to include the starting nodes in ancestor sets.
 
-        Returns
+        Returns:
         -------
         List[str]
             List of term IDs that are the lowest common ancestors.
         """
+
         if not node_ids:
             return []
 
         # Compute ancestors with distances for the first node
-        first_ancestors = dict(self.get_ancestors_with_distance(node_ids[0], include_self=False))
+        first_ancestors = dict(
+            self.get_ancestors_with_distance(node_ids[0], include_self=False)
+        )
         common_ancestors = set(first_ancestors.keys())
 
         # Initialize distances dict for LCA calculation
         # key: ancestor index, value: max distance from any node
-        lca_distances = {idx: dist for idx, dist in first_ancestors.items()}
+        lca_distances = dict(first_ancestors.items())
 
         # Process remaining nodes
         for term_id in node_ids[1:]:
-            ancestors_with_distance = dict(self.get_ancestors_with_distance(term_id, include_self=False))
+            ancestors_with_distance = dict(
+                self.get_ancestors_with_distance(term_id, include_self=False)
+            )
             ancestors_set = set(ancestors_with_distance.keys())
             common_ancestors.intersection_update(ancestors_set)
 
             # Update max distance for each common ancestor
-            lca_distances = {idx: max(lca_distances[idx], ancestors_with_distance[idx])
-                            for idx in common_ancestors}
+            lca_distances = {
+                idx: max(lca_distances[idx], ancestors_with_distance[idx])
+                for idx in common_ancestors
+            }
 
             # Early exit if no common ancestor remains
             if not common_ancestors:
@@ -433,5 +443,7 @@ class RelationsGraphblas(OntologyRelations):
         min_distance = min(lca_distances.values())
 
         # Return ancestor IDs that have this minimum distance
-        lowest_common_indices = [idx for idx, dist in lca_distances.items() if dist == min_distance]
+        lowest_common_indices = [
+            idx for idx, dist in lca_distances.items() if dist == min_distance
+        ]
         return lowest_common_indices

@@ -1,24 +1,25 @@
-import functools
-import logging
 from abc import ABC, abstractmethod
+import logging
 from collections import deque
 from collections.abc import Iterator
 
-import graphblas as gb
 import numpy as np
-from ontograph.models import Ontology
+import graphblas as gb
+
+from ontograph.models import Ontology, LookUpTables
 
 __all__ = [
-    'OntologyNavigator',
+    'NavigatorPronto',
 ]
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
+
 # --------------------------------------------------------
 # ----     OntologyNavigator Port (abstract class)    ----
 # --------------------------------------------------------
-class OntologyNavigator(ABC):
+class NavigatorPronto(ABC):
     """Abstract navigator for traversing and querying ontology term relationships."""
 
     def __init__(self, ontology: 'Ontology') -> None:
@@ -86,11 +87,10 @@ class OntologyNavigator(ABC):
         pass
 
 
-
 # ---------------------------------------------------------
 # ----     NavigatorPronto adapter (concrete class)    ----
 # ---------------------------------------------------------
-class NavigatorPronto(OntologyNavigator):
+class NavigatorPronto(NavigatorPronto):
     """Navigator for traversing and querying ontology term relationships.
 
     This class provides methods to retrieve parent, ancestor, descendant, sibling, and root terms
@@ -427,11 +427,12 @@ class NavigatorPronto(OntologyNavigator):
             logger.exception(f'Error retrieving root terms: {e}')
             return []
 
+
 # ------------------------------------------------------------
 # ----     NavigatorGraphblas adapter (concrete class)    ----
 # ------------------------------------------------------------
-class NavigatorGraphblas(OntologyNavigator):
-    def __init__(self, ontology: Ontology, lookup_tables) -> None:
+class NavigatorGraphblas(NavigatorPronto):
+    def __init__(self, ontology: Ontology, lookup_tables: LookUpTables) -> None:
         self.__ontology = ontology
 
         # --- Nodes ---
@@ -448,14 +449,20 @@ class NavigatorGraphblas(OntologyNavigator):
 
         self.matrices_container = self.__ontology.matrices_container
 
-    @functools.lru_cache(maxsize=None)
     def one_hot_vector(self, index: int) -> gb.Vector:
-        return gb.Vector.from_coo([index], [1], size=self.number_nodes, dtype=int)
-    
-    def _traverse_graph(self, term_id, adjacency_matrix, distance=None, include_self=False):
-        """
-        Generalized function to traverse a graph in either direction.
-        
+        return gb.Vector.from_coo(
+            [index], [1], size=self.number_nodes, dtype=int
+        )
+
+    def _traverse_graph(
+        self,
+        term_id: str,
+        adjacency_matrix: gb.Matrix,
+        distance: int = None,
+        include_self: bool = False,
+    ) -> list:
+        """Generalized function to traverse a graph in either direction.
+
         Parameters
         ----------
         term_id : str
@@ -467,43 +474,53 @@ class NavigatorGraphblas(OntologyNavigator):
         include_self : bool
             Whether to include the starting node in the result.
 
-        Returns
+        Returns:
         -------
         List[str]
             List of term IDs reached.
         """
         if term_id not in self.lookup_tables.get_lut_term_to_index():
-            raise KeyError(f"Unknown term ID: {term_id}")
-        
+            raise KeyError(f'Unknown term ID: {term_id}')
+
         index = self.lookup_tables.term_to_index(term_id)
         current_vector = self.one_hot_vector(index=index)
         visited = set()
-        
+
         if include_self:
             visited.add(index)
-        
+
         while current_vector.nvals != 0 and distance != 0:
             next_vector = gb.Vector(dtype=int, size=adjacency_matrix.nrows)
-            next_vector << gb.semiring.plus_times(adjacency_matrix @ current_vector)  # forward or transposed depends on matrix
-            
+            next_vector << gb.semiring.plus_times(
+                adjacency_matrix @ current_vector
+            )  # forward or transposed depends on matrix
+
             next_indices = set(next_vector.to_coo()[0])
             next_indices.difference_update(visited)
-            
+
             if not next_indices:
                 break
-            
+
             visited.update(next_indices)
-            current_vector = gb.Vector.from_coo(list(next_indices), [1]*len(next_indices), size=adjacency_matrix.nrows)
+            current_vector = gb.Vector.from_coo(
+                list(next_indices),
+                [1] * len(next_indices),
+                size=adjacency_matrix.nrows,
+            )
 
             if distance is not None:
                 distance -= 1
 
         return self.lookup_tables.index_to_term(list(visited))
-    
-    def _traverse_graph_with_distance(self, term_id, adjacency_matrix, include_self=False):
-        """
-        Generalized function to traverse a graph and return nodes with distance from start.
-        
+
+    def _traverse_graph_with_distance(
+        self,
+        term_id: str,
+        adjacency_matrix: gb.Matrix,
+        include_self: bool = False,
+    ) -> list:
+        """Generalized function to traverse a graph and return nodes with distance from start.
+
         Parameters
         ----------
         term_id : str
@@ -513,48 +530,57 @@ class NavigatorGraphblas(OntologyNavigator):
         include_self : bool
             Whether to include the starting node with distance 0.
 
-        Returns
+        Returns:
         -------
         List[Tuple[int, int]]
             List of tuples (node_index, distance_from_start)
         """
         if term_id not in self.lookup_tables.get_lut_term_to_index():
-            raise KeyError(f"Unknown term ID: {term_id}")
-        
+            raise KeyError(f'Unknown term ID: {term_id}')
+
         start_index = self.lookup_tables.term_to_index(term_id)
         current_vector = self.one_hot_vector(index=start_index)
-        
+
         distances = {}  # {node_index: distance}
         distance_counter = 0
-        
+
         if include_self:
             distances[start_index] = 0
 
         while current_vector.nvals != 0:
             next_vector = gb.Vector(dtype=int, size=adjacency_matrix.nrows)
-            next_vector << gb.semiring.plus_times(adjacency_matrix @ current_vector)
-            
+            next_vector << gb.semiring.plus_times(
+                adjacency_matrix @ current_vector
+            )
+
             next_indices = set(next_vector.to_coo()[0])
             # remove already visited nodes
             next_indices.difference_update(distances.keys())
-            
+
             if not next_indices:
                 break
-            
+
             distance_counter += 1
             for idx in next_indices:
                 distances[idx] = distance_counter
-            
-            current_vector = gb.Vector.from_coo(list(next_indices), [1]*len(next_indices), size=adjacency_matrix.nrows)
+
+            current_vector = gb.Vector.from_coo(
+                list(next_indices),
+                [1] * len(next_indices),
+                size=adjacency_matrix.nrows,
+            )
 
         # return as list of tuples
-        return [(self.lookup_tables.index_to_term(int(index)), distance) for index, distance in distances.items()]
+        return [
+            (self.lookup_tables.index_to_term(int(index)), distance)
+            for index, distance in distances.items()
+        ]
 
     # -- get_parents(term_id, include_self=False)
-    def get_parents(self, term_id, include_self=False):
+    def get_parents(self, term_id: str, include_self: bool = False) -> list:
         # validate and resolve the index
         if term_id not in self.lookup_tables.get_lut_term_to_index():
-            raise KeyError(f"Unknown term ID: {term_id}")
+            raise KeyError(f'Unknown term ID: {term_id}')
 
         index = self.lookup_tables.term_to_index(term_id)
 
@@ -569,13 +595,12 @@ class NavigatorGraphblas(OntologyNavigator):
             parent_vec[index] = True
 
         # translate indexes to terms
-        terms = [term for term in parent_vec]
-        
+        terms = list(parent_vec)
+
         return self.lookup_tables.index_to_term(terms)
-    
+
     # -- get_root()
-    def get_root(self):
-    
+    def get_root(self) -> list:
         matrix = self.matrices_container['is_a'].T
 
         # 1. Compute the number of incoming edges per node (column-wise sum)
@@ -595,17 +620,16 @@ class NavigatorGraphblas(OntologyNavigator):
         roots = np.where(col_sums_np == 0)[0]
 
         return self.lookup_tables.index_to_term(roots)
-    
 
     def get_term(self, term_id: str) -> object:
         """Retrieve the ontology term object for a given term ID."""
         pass
 
     # -- get_children(term_id, include_self=False)
-    def get_children(self, term_id, include_self=False):
+    def get_children(self, term_id: str, include_self: bool = False) -> list:
         # validate and resolve the index
         if term_id not in self.lookup_tables.get_lut_term_to_index():
-            raise KeyError(f"Unknown term ID: {term_id}")
+            raise KeyError(f'Unknown term ID: {term_id}')
 
         index = self.lookup_tables.term_to_index(term_id)
 
@@ -620,29 +644,54 @@ class NavigatorGraphblas(OntologyNavigator):
             children_vec[index] = True
 
         # translate indexes to terms
-        terms = [term for term in children_vec]
-        
+        terms = list(children_vec)
+
         return self.lookup_tables.index_to_term(terms)
 
-    def get_ancestors(self, term_id, distance=None, include_self=False):
-        adjacency_matrix = self.matrices_container['is_a'].T  # transpose for ancestors
-        return self._traverse_graph(term_id, adjacency_matrix, distance, include_self)
+    def get_ancestors(
+        self, term_id: str, distance: int = None, include_self: bool = False
+    ) -> list:
+        adjacency_matrix = self.matrices_container[
+            'is_a'
+        ].T  # transpose for ancestors
+        return self._traverse_graph(
+            term_id, adjacency_matrix, distance, include_self
+        )
 
-    def get_ancestors_with_distance(self, term_id, include_self=False):
-        adjacency_matrix = self.matrices_container['is_a'].T  # transpose for ancestors
-        return self._traverse_graph_with_distance(term_id, adjacency_matrix, include_self)
+    def get_ancestors_with_distance(
+        self, term_id: str, include_self: bool = False
+    ) -> list:
+        adjacency_matrix = self.matrices_container[
+            'is_a'
+        ].T  # transpose for ancestors
+        return self._traverse_graph_with_distance(
+            term_id, adjacency_matrix, include_self
+        )
 
-    def get_descendants(self, term_id, distance=None, include_self=False):
-        adjacency_matrix = self.matrices_container['is_a']  # normal direction for descendants
-        return self._traverse_graph(term_id, adjacency_matrix, distance, include_self)
+    def get_descendants(
+        self, term_id: str, distance: int = None, include_self: bool = False
+    ) -> list:
+        adjacency_matrix = self.matrices_container[
+            'is_a'
+        ]  # normal direction for descendants
+        return self._traverse_graph(
+            term_id, adjacency_matrix, distance, include_self
+        )
 
-    def get_descendants_with_distance(self, term_id, include_self=False):
-        adjacency_matrix = self.matrices_container['is_a']  # normal direction for descendants
-        return self._traverse_graph_with_distance(term_id, adjacency_matrix, include_self)
+    def get_descendants_with_distance(
+        self, term_id: str, include_self: bool = False
+    ) -> list:
+        adjacency_matrix = self.matrices_container[
+            'is_a'
+        ]  # normal direction for descendants
+        return self._traverse_graph_with_distance(
+            term_id, adjacency_matrix, include_self
+        )
 
-    def get_siblings(self, term_id, include_self: bool = False):
-        """
-        Retrieve all siblings of a given term (i.e., nodes that share at least one parent).
+    def get_siblings(
+        self, term_id: str, include_self: bool = False
+    ) -> list[str]:
+        """Retrieve all siblings of a given term (i.e., nodes that share at least one parent).
 
         Parameters
         ----------
@@ -651,14 +700,14 @@ class NavigatorGraphblas(OntologyNavigator):
         include_self : bool, optional (default=False)
             Whether to include the term itself in the returned set.
 
-        Returns
+        Returns:
         -------
         List[str]
             List of sibling term IDs.
         """
         # Validate term existence
         if term_id not in self.lookup_tables.get_lut_term_to_index():
-            raise KeyError(f"Unknown term ID: {term_id}")
+            raise KeyError(f'Unknown term ID: {term_id}')
 
         # Step 1: Get parents of the given term
         parents = self.get_parents(term_id, include_self=False)
@@ -678,4 +727,3 @@ class NavigatorGraphblas(OntologyNavigator):
 
         # Return as sorted list for deterministic output
         return sorted(siblings_set)
-

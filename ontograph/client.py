@@ -15,32 +15,33 @@ Example:
     >>> client.get_children("GO:0008150")[0]
     'GO:0002376'
 """
-import logging
+
 import re
-from codecs import lookup
+import logging
 from pathlib import Path
 from collections.abc import Iterator
 
-
-from ontograph.config.settings import DEFAULT_CACHE_DIR
-from ontograph.downloader import DownloaderPort
 from ontograph.loader import ProntoLoaderAdapter
 from ontograph.models import (
-    CatalogOntologies,
-    EdgesContainer,
-    Ontology,
-    LookUpTables,
-    NodesDataframe,
-    NodeContainer,
-    EdgesDataframe,
-    EdgesContainer,
     Graph,
-    TermList
+    Ontology,
+    TermList,
+    LookUpTables,
+    NodeContainer,
+    EdgesContainer,
+    EdgesDataframe,
+    NodesDataframe,
+    CatalogOntologies,
 )
-from ontograph.queries.navigator import NavigatorGraphblas, NavigatorPronto
-from ontograph.queries.relations import RelationsGraphblas, RelationsPronto
-from ontograph.queries.introspection import IntrospectionGraphblas, IntrospectionPronto
+from ontograph.downloader import DownloaderPort
+from ontograph.config.settings import DEFAULT_CACHE_DIR
+from ontograph.queries.navigator import NavigatorPronto, NavigatorGraphblas
+from ontograph.queries.relations import RelationsPronto, RelationsGraphblas
 from ontograph.utils.pronto_utils import extract_terms
+from ontograph.queries.introspection import (
+    IntrospectionPronto,
+    IntrospectionGraphblas,
+)
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
@@ -49,6 +50,7 @@ __all__ = [
     'ClientCatalog',
     'ClientOntology',
 ]
+
 
 # --------------------------------------------- #
 # ----          Client for Catalog          --- #
@@ -223,40 +225,45 @@ class ClientOntology:
         self._relations = None
         self._introspection = None
 
-
     def __create_graphblas_ontology(self, ontology, include_obsolete=False):
-        
-        terms = extract_terms(ontology=ontology, include_obsolete=include_obsolete)
-    
+        terms = extract_terms(
+            ontology=ontology, include_obsolete=include_obsolete
+        )
+
         # Step 2. Extract Lookup Tables and DataFrames
         lookup_tables = LookUpTables(terms=terms)
 
         # Step 3. Create Nodes objects
-        # Step 3.1. Create Nodes DataFrame        
-        nodes_df = NodesDataframe(terms=terms, include_obsolete=include_obsolete)
+        # Step 3.1. Create Nodes DataFrame
+        nodes_df = NodesDataframe(
+            terms=terms, include_obsolete=include_obsolete
+        )
         # Step 3.2. Create Nodes Indexes
-        nodes_indexes = NodeContainer(nodes_indices=nodes_df.get_dataframe()['index'].to_numpy(dtype=int))
+        nodes_indexes = NodeContainer(
+            nodes_indices=nodes_df.get_dataframe()['index'].to_numpy(dtype=int)
+        )
 
         # Step 4. Create Edges objects
         # Step 4.1. Create Edges DataFrame
-        edges_df = EdgesDataframe(terms=terms, include_obsolete=include_obsolete)
+        edges_df = EdgesDataframe(
+            terms=terms, include_obsolete=include_obsolete
+        )
         # Step 4.2. Create Edges Indexes
         edges_indexes = EdgesContainer(terms=terms, lookup_tables=lookup_tables)
-        
+
         # Step 5. Create Graph object
         graph = Graph(
             nodes_indexes=nodes_indexes,
             nodes_dataframe=nodes_df,
             edges_indexes=edges_indexes,
             edges_dataframe=edges_df,
-            lookup_tables=lookup_tables
+            lookup_tables=lookup_tables,
         )
 
         return lookup_tables, graph
 
     def _detect_source_type(self, source: str) -> str:
-        """
-        Determine whether 'source' is a file, an OBO Foundry ID, or a URL.
+        """Determine whether 'source' is a file, an OBO Foundry ID, or a URL.
         Priority order:
             1. Local file path
             2. OBO Foundry identifier
@@ -266,15 +273,15 @@ class ClientOntology:
 
         # 1. File path takes highest priority
         if path.exists() and path.is_file():
-            return "file"
+            return 'file'
 
         # 2. OBO Foundry ontology name (simple identifier, no slashes or dots)
-        if re.fullmatch(r"[A-Za-z0-9_-]+", source):
-            return "obo"
+        if re.fullmatch(r'[A-Za-z0-9_-]+', source):
+            return 'obo'
 
         # 3. URL (fallback)
-        if re.match(r"^https?://", source):
-            return "url"
+        if re.match(r'^https?://', source):
+            return 'url'
 
         raise ValueError(f"Cannot determine ontology source type: '{source}'")
 
@@ -324,7 +331,7 @@ class ClientOntology:
     #         raise
 
     #     # Detect which strategy to use
-    #     strategy = self._detect_source_type(source)        
+    #     strategy = self._detect_source_type(source)
     #     try:
     #         match strategy:
     #             case "file":
@@ -358,9 +365,9 @@ class ClientOntology:
         source: str,
         downloader: DownloaderPort = None,
         include_obsolete=False,
-        backend="pronto",
+        backend='pronto',
     ):
-        logger.info(f"Loading ontology from source: {source} ...")
+        logger.info(f'Loading ontology from source: {source} ...')
         loader = ProntoLoaderAdapter(cache_dir=self._cache_dir)
 
         path = Path(source)
@@ -368,70 +375,84 @@ class ClientOntology:
 
         # 1. Case 1: Local file exists
         if path.exists():
-            logger.info(f"Found local file at {path}, loading with ProntoLoaderAdapter...")
+            logger.info(
+                f'Found local file at {path}, loading with ProntoLoaderAdapter...'
+            )
             ontology = loader.load_from_file(file_path_ontology=path)
 
         # 2. Case 2: Provided source is a URL
-        elif re.match(r"^https?://", source):
-            logger.info(f"Detected URL source, downloading ontology from {source}")
-            filename = Path(source).name or "ontology.obo"
+        elif re.match(r'^https?://', source):
+            logger.info(
+                f'Detected URL source, downloading ontology from {source}'
+            )
+            filename = Path(source).name or 'ontology.obo'
             ontology = loader.load_from_url(source, filename, downloader)
 
         # 3. Case 3: Try OBO catalog (if file missing or simple ID)
         else:
             catalog_client = ClientCatalog(cache_dir=self._cache_dir)
             catalog_client.load_catalog()
-            available = [o["id"] for o in catalog_client.list_available_ontologies()]
+            available = [
+                o['id'] for o in catalog_client.list_available_ontologies()
+            ]
             name_id = Path(source).stem.lower()
 
             if name_id in available:
-                logger.info(f"Ontology '{name_id}' found in catalog, downloading...")
-                ontology = loader.load_from_catalog(name_id=name_id, format="obo")
+                logger.info(
+                    f"Ontology '{name_id}' found in catalog, downloading..."
+                )
+                ontology = loader.load_from_catalog(
+                    name_id=name_id, format='obo'
+                )
             else:
                 msg = f"Ontology '{source}' not found as file, URL, or catalog entry."
                 logger.error(msg)
                 raise FileNotFoundError(msg)
 
         # 4. Graph backend construction
-        logger.info(f"Using backend: {backend}")
-        if backend == "pronto":
+        logger.info(f'Using backend: {backend}')
+        if backend == 'pronto':
             self._ontology = ontology
             self._lookup_tables = None
 
-        elif backend == "graphblas":
-            self._lookup_tables, self._ontology = self.__create_graphblas_ontology(
-                ontology=ontology.get_ontology(),
-                include_obsolete=include_obsolete
+        elif backend == 'graphblas':
+            self._lookup_tables, self._ontology = (
+                self.__create_graphblas_ontology(
+                    ontology=ontology.get_ontology(),
+                    include_obsolete=include_obsolete,
+                )
             )
         else:
-            raise ValueError(f"Unknown backend specified: {backend}")
-
+            raise ValueError(f'Unknown backend specified: {backend}')
 
         # Initialize queries
-        logger.info(f"Initialize queries sequence.")
+        logger.info('Initialize queries sequence.')
         self._initialize_queries(backend)
 
-        logger.info("Ontology loading complete.")
-        
+        logger.info('Ontology loading complete.')
 
     def _initialize_queries(self, backend) -> None:
         """Initialize query adapters for navigation, relations, and introspection."""
 
-        if backend == "pronto":
+        if backend == 'pronto':
             self._navigator = NavigatorPronto(ontology=self._get_ontology)
             self._relations = RelationsPronto(navigator=self._navigator)
             self._introspection = IntrospectionPronto(
                 navigator=self._navigator,
                 relations=self._relations,
             )
-        elif backend == "graphblas":
-            self._navigator = NavigatorGraphblas(ontology=self._get_ontology,
-                                                 lookup_tables=self._lookup_tables)
-            self._relations = RelationsGraphblas(navigator=self._navigator, lookup_tables=self._lookup_tables)
-            self._introspection = IntrospectionGraphblas(navigator=self._navigator,
-                                                         relations=self._relations,
-                                                         lookup_tables=self._lookup_tables,
-                                                         )
+        elif backend == 'graphblas':
+            self._navigator = NavigatorGraphblas(
+                ontology=self._get_ontology, lookup_tables=self._lookup_tables
+            )
+            self._relations = RelationsGraphblas(
+                navigator=self._navigator, lookup_tables=self._lookup_tables
+            )
+            self._introspection = IntrospectionGraphblas(
+                navigator=self._navigator,
+                relations=self._relations,
+                lookup_tables=self._lookup_tables,
+            )
 
     @property
     def _get_ontology(self) -> Ontology:
@@ -506,7 +527,9 @@ class ClientOntology:
             >>> client.get_children("D")
             ['E', 'F', 'G']
         """
-        term_ids = self._navigator.get_children(term_id=term_id, include_self=include_self)
+        term_ids = self._navigator.get_children(
+            term_id=term_id, include_self=include_self
+        )
         return TermList(term_ids, self._lookup_tables)
 
         # return self._navigator.get_children(
@@ -540,7 +563,7 @@ class ClientOntology:
             distance=distance,
             include_self=include_self,
         )
-        return TermList(term_ids, self.lookup_tables)
+        return TermList(term_ids, self._lookup_tables)
         # return self._navigator.get_ancestors(
         #     term_id=term_id,
         #     distance=distance,
@@ -668,7 +691,7 @@ class ClientOntology:
         """
         term_ids = self._navigator.get_root()
         return TermList(term_ids, self._lookup_tables)
-        #return self._navigator.get_root()
+        # return self._navigator.get_root()
 
     # ---- Relation Methods
 
@@ -749,7 +772,7 @@ class ClientOntology:
         """
         term_ids = self._relations.get_common_ancestors(node_ids=node_ids)
         return TermList(term_ids, self._lookup_tables)
-        #return self._relations.get_common_ancestors(node_ids=node_ids)
+        # return self._relations.get_common_ancestors(node_ids=node_ids)
 
     def get_lowest_common_ancestors(self, node_ids: list[str]) -> set:
         """Get lowest common ancestors of multiple terms.
@@ -766,9 +789,11 @@ class ClientOntology:
             >>> client.get_lowest_common_ancestors(["K", "L"])
             {'B'}
         """
-        term_ids = self._relations.get_lowest_common_ancestors(node_ids=node_ids)
+        term_ids = self._relations.get_lowest_common_ancestors(
+            node_ids=node_ids
+        )
         return TermList(term_ids, self._lookup_tables)
-        #return self._relations.get_lowest_common_ancestors(node_ids=node_ids)
+        # return self._relations.get_lowest_common_ancestors(node_ids=node_ids)
 
     # ---- Introspection Methods
 
@@ -787,7 +812,7 @@ class ClientOntology:
             >>> client.get_distance_from_root("U")
             6
         """
-        return f"Distance from root: {self._introspection.get_distance_from_root(term_id=term_id)}"
+        return self._introspection.get_distance_from_root(term_id=term_id)
 
     def get_path_between(self, node_a: str, node_b: str) -> list[dict]:
         """Get the path between two terms.
@@ -848,4 +873,3 @@ class ClientOntology:
         )
 
         return None
-

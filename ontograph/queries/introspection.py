@@ -1,10 +1,9 @@
-import logging
 from abc import ABC, abstractmethod
+import logging
 from collections import deque
 
-
-from ontograph.queries.navigator import OntologyNavigator
-from ontograph.queries.relations import OntologyRelations
+from ontograph.queries.navigator import NavigatorPronto
+from ontograph.queries.relations import RelationsPronto
 
 __all__ = [
     'OntologyIntrospection',
@@ -12,6 +11,7 @@ __all__ = [
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
+
 
 # ------------------------------------------------------------
 # ----     OntologyIntrospection Port (abstract class)    ----
@@ -56,6 +56,7 @@ class OntologyIntrospection(ABC):
     #     """Print the tree structure in ASCII format starting from the root node."""
     #     pass
 
+
 # -------------------------------------------------------------
 # ----     IntrospectionPronto adapter (concrete class)    ----
 # -------------------------------------------------------------
@@ -66,7 +67,7 @@ class IntrospectionPronto(OntologyIntrospection):
     """
 
     def __init__(
-        self, navigator: OntologyNavigator, relations: OntologyRelations
+        self, navigator: NavigatorPronto, relations: RelationsPronto
     ) -> None:
         """Initialize the introspection utility.
 
@@ -229,15 +230,18 @@ class IntrospectionPronto(OntologyIntrospection):
     def print_term_trajectories_tree(trajectories: list[dict]) -> None:
         """Print all ancestor trajectories as a single ASCII tree from root to the original term.
 
-        Combining shared nodes.
-
-        Args:
-            trajectories: List of lists, each inner list is a trajectory (branch) as returned by ancestor_trajectories.
+        For a single trajectory, print each node as '{id}: {name}'.
+        For multiple, print as ASCII tree.
         """
         if not trajectories:
             print('No trajectories to display.')
             return
-        logger.info('Trajectories')
+        # If only one trajectory, print each node simply
+        if len(trajectories) == 1:
+            for node in trajectories[0]:
+                print(f'{node["id"]}: {node["name"]}')
+            return
+        # Otherwise, use tree printing
         root = OntologyIntrospection._build_tree_from_trajectories(trajectories)
         OntologyIntrospection._print_ascii_tree(root)
 
@@ -309,7 +313,10 @@ class IntrospectionGraphblas(OntologyIntrospection):
     """
 
     def __init__(
-        self, navigator: OntologyNavigator, relations: OntologyRelations, lookup_tables
+        self,
+        navigator: NavigatorPronto,
+        relations: RelationsPronto,
+        lookup_tables,
     ) -> None:
         """Initialize the introspection utility.
 
@@ -323,15 +330,14 @@ class IntrospectionGraphblas(OntologyIntrospection):
         self.matrices_container = navigator.matrices_container
 
     def get_distance_from_root(self, term_id):
-        """
-        Calculate the distance from the given term to the root node(s) of the ontology.
+        """Calculate the distance from the given term to the root node(s) of the ontology.
 
         Parameters
         ----------
         term_id : str
             The term ID for which to compute the distance from root.
 
-        Returns
+        Returns:
         -------
         int
             Distance from the term to the root (number of edges).
@@ -339,10 +345,12 @@ class IntrospectionGraphblas(OntologyIntrospection):
         """
         # Validate term
         if term_id not in self.lookup_tables.get_lut_term_to_index():
-            raise KeyError(f"Unknown term ID: {term_id}")
+            raise KeyError(f'Unknown term ID: {term_id}')
 
         # Get all ancestors with distance
-        ancestors_with_distance = self.get_ancestors_with_distance(term_id, include_self=True)
+        ancestors_with_distance = self.get_ancestors_with_distance(
+            term_id, include_self=True
+        )
 
         if not ancestors_with_distance:
             # No ancestors, this term is a root
@@ -354,8 +362,7 @@ class IntrospectionGraphblas(OntologyIntrospection):
         return max_distance
 
     def get_path_between(self, node_a, node_b):
-        """
-        Find the shortest path between two nodes in the ontology.
+        """Find the shortest path between two nodes in the ontology.
 
         Parameters
         ----------
@@ -364,19 +371,22 @@ class IntrospectionGraphblas(OntologyIntrospection):
         node_b : str
             Ending term ID.
 
-        Returns
+        Returns:
         -------
         List[str]
             List of term IDs representing the path from node_a to node_b (inclusive).
             Returns empty list if no path exists.
         """
         if node_a not in self.lookup_tables.get_lut_term_to_index():
-            raise KeyError(f"Unknown term ID: {node_a}")
+            raise KeyError(f'Unknown term ID: {node_a}')
         if node_b not in self.lookup_tables.get_lut_term_to_index():
-            raise KeyError(f"Unknown term ID: {node_b}")
+            raise KeyError(f'Unknown term ID: {node_b}')
 
         # Check if a path exists
-        if not (self.is_ancestor(node_a, node_b) or self.is_descendant(node_a, node_b)):
+        if not (
+            self.is_ancestor(node_a, node_b)
+            or self.is_descendant(node_a, node_b)
+        ):
             return []
 
         # Determine direction
@@ -414,8 +424,7 @@ class IntrospectionGraphblas(OntologyIntrospection):
         return []
 
     def get_trajectories_from_root(self, term_id: str) -> list[list[dict]]:
-        """
-        Get all ancestor trajectories from the root(s) to the given term using GraphBLAS operations.
+        """Get all ancestor trajectories from the root(s) to the given term using GraphBLAS operations.
 
         Args:
             term_id (str): The identifier of the term.
@@ -427,7 +436,7 @@ class IntrospectionGraphblas(OntologyIntrospection):
         # Validate input
         lut_term_to_index = self.lookup_tables.get_lut_term_to_index()
         if term_id not in lut_term_to_index:
-            raise KeyError(f"Unknown term ID: {term_id}")
+            raise KeyError(f'Unknown term ID: {term_id}')
 
         A_T = self.matrices_container['is_a'].T
         term_idx = int(self.lookup_tables.term_to_index(term_id))
@@ -437,6 +446,7 @@ class IntrospectionGraphblas(OntologyIntrospection):
         root_indices = {int(self.lookup_tables.term_to_index(r)) for r in roots}
 
         from collections import deque
+
         queue = deque([[term_idx]])
         trajectories = []
 
@@ -445,7 +455,9 @@ class IntrospectionGraphblas(OntologyIntrospection):
             current_idx = int(path[0])
 
             # Parent discovery using GraphBLAS multiplication
-            parent_vec = (A_T @ self.__navigator.one_hot_vector(current_idx)).new()
+            parent_vec = (
+                A_T @ self.__navigator.one_hot_vector(current_idx)
+            ).new()
             parent_indices = [int(i) for i in parent_vec.to_coo()[0]]
 
             # Termination condition: reached a root or no parents
@@ -453,14 +465,22 @@ class IntrospectionGraphblas(OntologyIntrospection):
                 # Reverse path → root → term order
                 reversed_path = list(reversed(path))
                 traj = []
-                for dist, idx in enumerate(reversed_path[::-1]):  # distance from term
+                for dist, idx in enumerate(
+                    reversed_path[::-1]
+                ):  # distance from term
                     idx = int(idx)
-                    traj.append({
-                        'id': self.lookup_tables.index_to_term(idx),
-                        'name': self.lookup_tables.term_to_description(self.lookup_tables.index_to_term(idx)),
-                        'distance': dist
-                    })
-                trajectories.append(list(reversed(traj)))  # ensure root→term order
+                    traj.append(
+                        {
+                            'id': self.lookup_tables.index_to_term(idx),
+                            'name': self.lookup_tables.term_to_description(
+                                self.lookup_tables.index_to_term(idx)
+                            ),
+                            'distance': dist,
+                        }
+                    )
+                trajectories.append(
+                    list(reversed(traj))
+                )  # ensure root→term order
             else:
                 for p in parent_indices:
                     if p not in path:
@@ -483,7 +503,9 @@ class IntrospectionGraphblas(OntologyIntrospection):
         if not trajectories:
             print('No trajectories to display.')
             return
-        root = IntrospectionGraphblas._build_tree_from_trajectories(trajectories)
+        root = IntrospectionGraphblas._build_tree_from_trajectories(
+            trajectories
+        )
         IntrospectionGraphblas._print_ascii_tree(root)
 
     @staticmethod
