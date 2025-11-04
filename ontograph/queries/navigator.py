@@ -578,7 +578,7 @@ class NavigatorGraphblas(NavigatorOntology):
 
     # -- get_parents(term_id, include_self=False)
     def get_parents(self, term_id: str, include_self: bool = False) -> list:
-        # validate and resolve the index
+        # Validate and resolve the index
         if term_id not in self.lookup_tables.get_lut_term_to_index():
             raise KeyError(f'Unknown term ID: {term_id}')
 
@@ -587,17 +587,16 @@ class NavigatorGraphblas(NavigatorOntology):
         # Initialize a one-hot vector for the term node
         vector_node = self.one_hot_vector(index=index)
 
-        # Propagate to children using matrix-vector multiplication
+        # Propagate to parents using matrix-vector multiplication
         parent_vec = (self.matrices_container['is_a'].T @ vector_node).new()
 
-        # Optionally include the node itself
+        # Extract parent indices efficiently
+        parent_indices = set(parent_vec.to_coo()[0])
         if include_self:
-            parent_vec[index] = True
+            parent_indices.add(index)
 
-        # translate indexes to terms
-        terms = list(parent_vec)
-
-        return self.lookup_tables.index_to_term(terms)
+        # Convert indices to term IDs
+        return self.lookup_tables.index_to_term(list(parent_indices))
 
     # -- get_root()
     def get_root(self) -> list:

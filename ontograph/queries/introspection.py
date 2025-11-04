@@ -352,7 +352,7 @@ class IntrospectionGraphblas(IntrospectionOntology):
             raise KeyError(f'Unknown term ID: {term_id}')
 
         # Get all ancestors with distance
-        ancestors_with_distance = self.get_ancestors_with_distance(
+        ancestors_with_distance = self.__navigator.get_ancestors_with_distance(
             term_id, include_self=True
         )
 
@@ -388,13 +388,13 @@ class IntrospectionGraphblas(IntrospectionOntology):
 
         # Check if a path exists
         if not (
-            self.is_ancestor(node_a, node_b)
-            or self.is_descendant(node_a, node_b)
+            self.__relations.is_ancestor(node_a, node_b)
+            or self.__relations.is_descendant(node_a, node_b)
         ):
             return []
 
         # Determine direction
-        if self.is_ancestor(node_a, node_b):
+        if self.__relations.is_ancestor(node_a, node_b):
             start, end = node_a, node_b
             adjacency_matrix = self.matrices_container['is_a']
         else:
@@ -417,7 +417,9 @@ class IntrospectionGraphblas(IntrospectionOntology):
                 return self.lookup_tables.index_to_term(path)
 
             # Get children (or parents depending on direction)
-            neighbors_vec = adjacency_matrix @ self.one_hot_vector(current)
+            neighbors_vec = adjacency_matrix @ self.__navigator.one_hot_vector(
+                current
+            )
             neighbors = neighbors_vec.to_coo()[0]
 
             for n in neighbors:

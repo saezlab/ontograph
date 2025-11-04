@@ -317,7 +317,7 @@ class RelationsGraphblas(RelationsOntology):
 
         # Retrieve descendants of the ancestor
         descendants = set(
-            self.get_descendants(ancestor_node, include_self=False)
+            self.__navigator.get_descendants(ancestor_node, include_self=False)
         )
         return descendant_node in descendants
 
@@ -344,8 +344,12 @@ class RelationsGraphblas(RelationsOntology):
             raise KeyError(f'Unknown term ID: {node_b}')
 
         # Step 1: Get parents for both nodes
-        parents_a = set(self.get_parents(node_a, include_self=False))
-        parents_b = set(self.get_parents(node_b, include_self=False))
+        parents_a = set(
+            self.__navigator.get_parents(node_a, include_self=False)
+        )
+        parents_b = set(
+            self.__navigator.get_parents(node_b, include_self=False)
+        )
 
         # Step 2: Intersection of parents indicates sibling relationship
         shared_parents = parents_a.intersection(parents_b)
@@ -373,12 +377,14 @@ class RelationsGraphblas(RelationsOntology):
 
         # get ancestors for the first node
         common_ancestors = set(
-            self.get_ancestors(node_ids[0], include_self=False)
+            self.__navigator.get_ancestors(node_ids[0], include_self=False)
         )
 
         # intersect with ancestors of the rest
         for term_id in node_ids[1:]:
-            ancestors = set(self.get_ancestors(term_id, include_self=False))
+            ancestors = set(
+                self.__navigator.get_ancestors(term_id, include_self=False)
+            )
             common_ancestors.intersection_update(ancestors)
 
             # early exit if no common ancestor remains
@@ -410,7 +416,9 @@ class RelationsGraphblas(RelationsOntology):
 
         # Compute ancestors with distances for the first node
         first_ancestors = dict(
-            self.get_ancestors_with_distance(node_ids[0], include_self=False)
+            self.__navigator.get_ancestors_with_distance(
+                node_ids[0], include_self=False
+            )
         )
         common_ancestors = set(first_ancestors.keys())
 
@@ -421,7 +429,9 @@ class RelationsGraphblas(RelationsOntology):
         # Process remaining nodes
         for term_id in node_ids[1:]:
             ancestors_with_distance = dict(
-                self.get_ancestors_with_distance(term_id, include_self=False)
+                self.__navigator.get_ancestors_with_distance(
+                    term_id, include_self=False
+                )
             )
             ancestors_set = set(ancestors_with_distance.keys())
             common_ancestors.intersection_update(ancestors_set)
