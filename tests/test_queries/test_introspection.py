@@ -3,9 +3,9 @@ from pathlib import Path
 import pytest
 
 from ontograph.loader import ProntoLoaderAdapter
-from ontograph.queries.navigator import OntologyNavigator
-from ontograph.queries.relations import OntologyRelations
-from ontograph.queries.introspection import OntologyIntrospection
+from ontograph.queries.navigator import NavigatorPronto
+from ontograph.queries.relations import RelationsPronto
+from ontograph.queries.introspection import IntrospectionPronto
 
 
 # -----------------------------------
@@ -34,17 +34,17 @@ def dummy_ontology(tmp_path):
 
 @pytest.fixture
 def dummy_navigator(dummy_ontology):
-    return OntologyNavigator(dummy_ontology)
+    return NavigatorPronto(dummy_ontology)
 
 
 @pytest.fixture
 def dummy_relations(dummy_navigator):
-    return OntologyRelations(dummy_navigator)
+    return RelationsPronto(dummy_navigator)
 
 
 @pytest.fixture
 def dummy_introspection(dummy_navigator, dummy_relations):
-    return OntologyIntrospection(dummy_navigator, dummy_relations)
+    return IntrospectionPronto(dummy_navigator, dummy_relations)
 
 
 # -----------------------------------
@@ -154,7 +154,7 @@ def test_get_trajectories_from_root_root_term(dummy_introspection):
 
 
 def test_print_term_trajectories_tree_empty(capsys):
-    OntologyIntrospection.print_term_trajectories_tree([])
+    IntrospectionPronto.print_term_trajectories_tree([])
     out, _ = capsys.readouterr()
     assert 'No trajectories to display.' in out
 
@@ -167,7 +167,7 @@ def test_print_term_trajectories_tree_simple(capsys):
             {'id': 'D', 'name': 'D', 'distance': 2},
         ]
     ]
-    OntologyIntrospection.print_term_trajectories_tree(trajectories)
+    IntrospectionPronto.print_term_trajectories_tree(trajectories)
     out, _ = capsys.readouterr()
     assert 'Z: root' in out
     assert 'A: A' in out
@@ -185,7 +185,7 @@ def test_build_tree_from_trajectories_structure():
             {'id': 'B', 'name': 'B', 'distance': 1},
         ],
     ]
-    root = OntologyIntrospection._build_tree_from_trajectories(trajectories)
+    root = IntrospectionPronto._build_tree_from_trajectories(trajectories)
     assert root.id == 'Z'
     assert 'A' in [c.name for c in root.children.values()]
     assert 'B' in [c.name for c in root.children.values()]
@@ -202,7 +202,7 @@ def test_print_ascii_tree(capsys):
     root = Node('Z', 'root', 0)
     root.children[('A', 'A', 1)] = Node('A', 'A', 1)
     root.children[('B', 'B', 1)] = Node('B', 'B', 1)
-    OntologyIntrospection._print_ascii_tree(root)
+    IntrospectionPronto._print_ascii_tree(root)
     out, _ = capsys.readouterr()
     assert 'Z: root' in out
     assert 'A: A' in out
@@ -216,7 +216,7 @@ def test_get_distance_from_root_term_exception(
         raise RuntimeError('Term not found')
 
     monkeypatch.setattr(
-        dummy_introspection._OntologyIntrospection__navigator,
+        dummy_introspection._IntrospectionPronto__navigator,
         'get_term',
         raise_exc,
     )
@@ -228,7 +228,7 @@ def test_get_distance_from_root_root_exception(
     dummy_introspection, monkeypatch
 ):
     monkeypatch.setattr(
-        dummy_introspection._OntologyIntrospection__navigator,
+        dummy_introspection._IntrospectionPronto__navigator,
         'get_root',
         lambda: [],
     )
@@ -251,7 +251,7 @@ def test_get_trajectories_from_root_superclasses_attribute_error(
             raise AttributeError('fail')
 
     monkeypatch.setattr(
-        dummy_introspection._OntologyIntrospection__navigator,
+        dummy_introspection._IntrospectionPronto__navigator,
         'get_term',
         lambda tid: DummyTerm(),
     )
@@ -270,7 +270,7 @@ def test_get_trajectories_from_root_superclasses_type_error(
             raise TypeError('fail')
 
     monkeypatch.setattr(
-        dummy_introspection._OntologyIntrospection__navigator,
+        dummy_introspection._IntrospectionPronto__navigator,
         'get_term',
         lambda tid: DummyTerm(),
     )

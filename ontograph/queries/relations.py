@@ -1,17 +1,56 @@
+from abc import ABC, abstractmethod
 import logging
 from collections import deque
 
-from ontograph.queries.navigator import OntologyNavigator as _OntologyNavigator
+from ontograph.queries.navigator import NavigatorOntology as _OntologyNavigator
 
 __all__ = [
-    'OntologyRelations',
+    'RelationsOntology',
 ]
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 
-class OntologyRelations:
+# --------------------------------------------------------
+# ----     OntologyRelations Port (abstract class)    ----
+# --------------------------------------------------------
+class RelationsOntology(ABC):
+    """Abstract class for querying relationships between ontology terms."""
+
+    def __init__(self, navigator: _OntologyNavigator) -> None:
+        self._navigator = navigator
+
+    @abstractmethod
+    def is_ancestor(self, ancestor_node: str, descendant_node: str) -> bool:
+        """Determines if `ancestor_node` is an ancestor of `descendant_node`."""
+        pass
+
+    @abstractmethod
+    def is_descendant(self, descendant_node: str, ancestor_node: str) -> bool:
+        """Determines if `descendant_node` is a descendant of `ancestor_node`."""
+        pass
+
+    @abstractmethod
+    def is_sibling(self, node_a: str, node_b: str) -> bool:
+        """Determine if two nodes are siblings (share at least one parent)."""
+        pass
+
+    @abstractmethod
+    def get_common_ancestors(self, node_ids: list[str]) -> set:
+        """Finds the common ancestors of a list of nodes."""
+        pass
+
+    @abstractmethod
+    def get_lowest_common_ancestors(self, node_ids: list[str]) -> set:
+        """Finds the lowest common ancestors among a set of nodes."""
+        pass
+
+
+# ---------------------------------------------------------
+# ----     RelationsPronto adapter (abstract class)    ----
+# ---------------------------------------------------------
+class RelationsPronto(RelationsOntology):
     """Provides methods for querying relationships between ontology terms.
 
     Includes ancestor, descendant, sibling checks, and common ancestor computations.
@@ -212,3 +251,209 @@ class OntologyRelations:
             anc for anc, dist in distances.items() if dist == min_distance
         }
         return lowest_common
+
+
+# ------------------------------------------------------------
+# ----     RelationsGraphblas adapter (abstract class)    ----
+# ------------------------------------------------------------
+class RelationsGraphblas(RelationsOntology):
+    def __init__(
+        self, navigator: _OntologyNavigator, lookup_tables: object
+    ) -> None:
+        """Initialize OntologyRelations.
+
+        Args:
+            navigator (_OntologyNavigator): The ontology navigator instance.
+            lookup_tables (object): Lookup tables for term indices and relationships.
+        """
+        self.__navigator = navigator
+        self.lookup_tables = lookup_tables
+
+    def is_ancestor(self, ancestor_node: str, descendant_node: str) -> bool:
+        """Check if `ancestor_node` is an ancestor of `descendant_node`.
+
+        Parameters
+        ----------
+        ancestor_node : str
+            Candidate ancestor term ID.
+        descendant_node : str
+            Candidate descendant term ID.
+
+        Returns:
+        -------
+        bool
+            True if `ancestor_node` is an ancestor of `descendant_node`, else False.
+        """
+        if descendant_node not in self.lookup_tables.get_lut_term_to_index():
+            raise KeyError(f'Unknown term ID: {descendant_node}')
+        if ancestor_node not in self.lookup_tables.get_lut_term_to_index():
+            raise KeyError(f'Unknown term ID: {ancestor_node}')
+
+        # Retrieve ancestors of the descendant
+        ancestors = set(
+            self.__navigator.get_ancestors(descendant_node, include_self=False)
+        )
+        return ancestor_node in ancestors
+
+    def is_descendant(self, descendant_node: str, ancestor_node: str) -> bool:
+        """Check if `descendant_node` is a descendant of `ancestor_node`.
+
+        Parameters
+        ----------
+        descendant_node : str
+            Candidate descendant term ID.
+        ancestor_node : str
+            Candidate ancestor term ID.
+
+        Returns:
+        -------
+        bool
+            True if `descendant_node` is a descendant of `ancestor_node`, else False.
+        """
+        if ancestor_node not in self.lookup_tables.get_lut_term_to_index():
+            raise KeyError(f'Unknown term ID: {ancestor_node}')
+        if descendant_node not in self.lookup_tables.get_lut_term_to_index():
+            raise KeyError(f'Unknown term ID: {descendant_node}')
+
+        # Retrieve descendants of the ancestor
+        descendants = set(
+            self.__navigator.get_descendants(ancestor_node, include_self=False)
+        )
+        return descendant_node in descendants
+
+    def is_sibling(self, node_a: str, node_b: str) -> bool:
+        """Check if two nodes are siblings (i.e., share at least one common parent).
+
+        Parameters
+        ----------
+        node_a : str
+            First node (term ID).
+        node_b : str
+            Second node (term ID).
+
+        Returns:
+        -------
+        bool
+            True if both nodes share at least one parent; False otherwise.
+        """
+        # Validate existence
+        lut = self.lookup_tables.get_lut_term_to_index()
+        if node_a not in lut:
+            raise KeyError(f'Unknown term ID: {node_a}')
+        if node_b not in lut:
+            raise KeyError(f'Unknown term ID: {node_b}')
+
+        # Step 1: Get parents for both nodes
+        parents_a = set(
+            self.__navigator.get_parents(node_a, include_self=False)
+        )
+        parents_b = set(
+            self.__navigator.get_parents(node_b, include_self=False)
+        )
+
+        # Step 2: Intersection of parents indicates sibling relationship
+        shared_parents = parents_a.intersection(parents_b)
+
+        # Step 3: Return True if they share any parent
+        return len(shared_parents) > 0
+
+    def get_common_ancestors(self, node_ids: list[str]) -> set:
+        """Return the common ancestors of a list of terms.
+
+        Parameters
+        ----------
+        node_ids : List[str]
+            List of starting term IDs.
+        include_self : bool
+            Whether to include the starting nodes themselves in the ancestor sets.
+
+        Returns:
+        -------
+        List[str]
+            List of term IDs that are common ancestors to all input terms.
+        """
+        if not node_ids:
+            return []
+
+        # get ancestors for the first node
+        common_ancestors = set(
+            self.__navigator.get_ancestors(node_ids[0], include_self=False)
+        )
+
+        # intersect with ancestors of the rest
+        for term_id in node_ids[1:]:
+            ancestors = set(
+                self.__navigator.get_ancestors(term_id, include_self=False)
+            )
+            common_ancestors.intersection_update(ancestors)
+
+            # early exit if no common ancestor remains
+            if not common_ancestors:
+                return []
+
+        return set(common_ancestors)
+
+    def get_lowest_common_ancestors(self, node_ids: list[str]) -> list[str]:
+        """Return the lowest common ancestor(s) of a list of terms.
+
+        Lowest = closest to the given terms.
+
+        Parameters
+        ----------
+        node_ids : List[str]
+            List of starting term IDs.
+        include_self : bool
+            Whether to include the starting nodes in ancestor sets.
+
+        Returns:
+        -------
+        List[str]
+            List of term IDs that are the lowest common ancestors.
+        """
+
+        if not node_ids:
+            return []
+
+        # Compute ancestors with distances for the first node
+        first_ancestors = dict(
+            self.__navigator.get_ancestors_with_distance(
+                node_ids[0], include_self=False
+            )
+        )
+        common_ancestors = set(first_ancestors.keys())
+
+        # Initialize distances dict for LCA calculation
+        # key: ancestor index, value: max distance from any node
+        lca_distances = dict(first_ancestors.items())
+
+        # Process remaining nodes
+        for term_id in node_ids[1:]:
+            ancestors_with_distance = dict(
+                self.__navigator.get_ancestors_with_distance(
+                    term_id, include_self=False
+                )
+            )
+            ancestors_set = set(ancestors_with_distance.keys())
+            common_ancestors.intersection_update(ancestors_set)
+
+            # Update max distance for each common ancestor
+            lca_distances = {
+                idx: max(lca_distances[idx], ancestors_with_distance[idx])
+                for idx in common_ancestors
+            }
+
+            # Early exit if no common ancestor remains
+            if not common_ancestors:
+                return []
+
+        if not lca_distances:
+            return []
+
+        # Find the minimum of the maximum distances
+        min_distance = min(lca_distances.values())
+
+        # Return ancestor IDs that have this minimum distance
+        lowest_common_indices = [
+            idx for idx, dist in lca_distances.items() if dist == min_distance
+        ]
+        return lowest_common_indices

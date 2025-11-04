@@ -3,8 +3,8 @@ from pathlib import Path
 import pytest
 
 from ontograph.loader import ProntoLoaderAdapter
-from ontograph.queries.navigator import OntologyNavigator
-from ontograph.queries.relations import OntologyRelations
+from ontograph.queries.navigator import NavigatorPronto
+from ontograph.queries.relations import RelationsPronto
 
 
 # -----------------------------------
@@ -33,12 +33,12 @@ def dummy_ontology(tmp_path):
 
 @pytest.fixture
 def dummy_navigator(dummy_ontology):
-    return OntologyNavigator(dummy_ontology)
+    return NavigatorPronto(dummy_ontology)
 
 
 @pytest.fixture
 def dummy_relations(dummy_navigator):
-    return OntologyRelations(dummy_navigator)
+    return RelationsPronto(dummy_navigator)
 
 
 # -----------------------------------
@@ -78,9 +78,9 @@ def raise_runtime_error(*a, **kw):
 
 def test_is_ancestor_exception(dummy_relations, monkeypatch):
     # Patch get_ancestors to raise Exception
-    # Accessing _OntologyRelations__navigator directly is intentional for testing.
+    # Accessing _RelationsPronto__navigator directly is intentional for testing.
     monkeypatch.setattr(
-        dummy_relations._OntologyRelations__navigator,
+        dummy_relations._RelationsPronto__navigator,
         'get_ancestors',
         raise_runtime_error,
     )
@@ -110,9 +110,9 @@ def test_is_descendant_self(dummy_relations):
 
 
 def test_is_descendant_exception(dummy_relations, monkeypatch):
-    # Accessing _OntologyRelations__navigator directly is intentional for testing.
+    # Accessing _RelationsPronto__navigator directly is intentional for testing.
     monkeypatch.setattr(
-        dummy_relations._OntologyRelations__navigator,
+        dummy_relations._RelationsPronto__navigator,
         'get_descendants',
         raise_runtime_error,
     )
@@ -153,7 +153,7 @@ def test_is_sibling_handles_runtime_error_gracefully(
             raise RuntimeError('fail')
 
     monkeypatch.setattr(
-        dummy_relations._OntologyRelations__navigator,
+        dummy_relations._RelationsPronto__navigator,
         'get_term',
         lambda _x: DummyTerm(),
     )
@@ -205,7 +205,7 @@ def test_get_common_ancestors_multiple_nodes(dummy_relations):
 
 def test_get_common_ancestors_outer_exception(dummy_relations, monkeypatch):
     monkeypatch.setattr(
-        dummy_relations._OntologyRelations__navigator,
+        dummy_relations._RelationsPronto__navigator,
         'get_ancestors',
         lambda *a, **kw: (_ for _ in ()).throw(RuntimeError('fail')),
     )
@@ -220,7 +220,7 @@ def test_get_common_ancestors_inner_exception(dummy_relations, monkeypatch):
         return {'A'}
 
     monkeypatch.setattr(
-        dummy_relations._OntologyRelations__navigator,
+        dummy_relations._RelationsPronto__navigator,
         'get_ancestors',
         fail_on_B,
     )
@@ -283,7 +283,7 @@ def test_get_distance_to_ancestor_self(dummy_relations):
 
 def test_get_distance_to_ancestor_exception(dummy_relations, monkeypatch):
     monkeypatch.setattr(
-        dummy_relations._OntologyRelations__navigator,
+        dummy_relations._RelationsPronto__navigator,
         'get_term',
         lambda x: (_ for _ in ()).throw(RuntimeError('fail')),
     )
@@ -301,7 +301,7 @@ def test_get_distance_to_ancestor_traversal_exception(
             raise RuntimeError('fail')
 
     monkeypatch.setattr(
-        dummy_relations._OntologyRelations__navigator,
+        dummy_relations._RelationsPronto__navigator,
         'get_term',
         lambda x: DummyTerm(),
     )
