@@ -35,7 +35,7 @@
 - [ ] Performance implications considered (time/memory)
 - [ ] Labels set (enhancement/feature)
 - [ ] Changelog entry prepared (see `CHANGELOG.md`)
-- [ ] I agree to the [Code of Conduct](../CODE_OF_CONDUCT.md)
+- [ ] I agree to the [Code of Conduct](../../CODE_OF_CONDUCT.md)
 
 ## Acceptance criteria
 - Outline concrete criteria for reviewers to approve
