@@ -148,7 +148,23 @@ to discuss what you would like to change.
 
 Please make sure to update tests as appropriate.
 
-- [ ] TODO: add contribution guidelines. All of them can be modified in the mkdocs documentation (./docs/community)
+- Community Standards and Code of Conduct
+    - We value a respectful, inclusive, and collaborative environment. Please read our [Code of Conduct](./CODE_OF_CONDUCT.md) before participating (issues, discussions, PRs).
+    - For contribution guidelines (how to propose changes, style, testing), see the [Community docs](./docs/community/).
+
+### Choosing a Pull Request template
+
+When opening a PR, GitHub will offer a template picker:
+- Use the default template for most changes.
+- Choose a specialized template under `.github/PULL_REQUEST_TEMPLATE/` when appropriate:
+    - `bug_fix.md` — reported issues and regressions
+    - `feature.md` — new capabilities or enhancements
+    - `docs.md` — documentation-only updates
+    - `maintenance.md` — tooling, CI, dependencies, formatting
+    - `performance.md` — optimizations with benchmarks
+    - `breaking_change.md` — changes that require migration guidance
+
+Each template includes a checklist for tests, docs, pre-commit, and changelog entries.
 
 ## License
 
