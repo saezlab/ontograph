@@ -43,7 +43,7 @@
 - [ ] No secrets/credentials introduced
 - [ ] Labels set (bug)
 - [ ] Changelog entry prepared (see `CHANGELOG.md`)
-- [ ] I agree to the [Code of Conduct](../CODE_OF_CONDUCT.md)
+- [ ] I agree to the [Code of Conduct](../../CODE_OF_CONDUCT.md)
 
 ## Test plan
 Describe how you validated the fix.
