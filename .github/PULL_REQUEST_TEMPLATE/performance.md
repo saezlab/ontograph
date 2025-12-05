@@ -24,7 +24,7 @@
 - [ ] Changelog entry prepared (see `CHANGELOG.md`)
 - [ ] Monitoring/observability plan (if applicable)
 - [ ] Labels set (performance)
-- [ ] I agree to the [Code of Conduct](../CODE_OF_CONDUCT.md)
+- [ ] I agree to the [Code of Conduct](../../CODE_OF_CONDUCT.md)
 
 ## Additional notes
 - Future work or guardrails
