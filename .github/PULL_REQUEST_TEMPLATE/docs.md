@@ -20,7 +20,7 @@
 - [ ] Lint/formatting for Markdown
 - [ ] Changelog entry prepared (see `CHANGELOG.md`) if user-facing docs changed
 - [ ] README updated (if relevant)
-- [ ] I agree to the [Code of Conduct](../CODE_OF_CONDUCT.md)
+- [ ] I agree to the [Code of Conduct](../../CODE_OF_CONDUCT.md)
 
 ## Additional notes
 - Any follow-ups or open questions
