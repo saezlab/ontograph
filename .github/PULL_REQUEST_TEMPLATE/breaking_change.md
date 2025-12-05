@@ -33,7 +33,7 @@
 - [ ] Changelog entry prepared (see `CHANGELOG.md`)
 - [ ] Risk assessment and rollback plan
 - [ ] Labels set (breaking-change)
-- [ ] I agree to the [Code of Conduct](../CODE_OF_CONDUCT.md)
+- [ ] I agree to the [Code of Conduct](../../CODE_OF_CONDUCT.md)
 
 ## Additional notes
 - Known limitations and follow-ups
