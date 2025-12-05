@@ -25,7 +25,7 @@
 - [ ] No secrets/credentials introduced
 - [ ] Labels set (chore/maintenance)
 - [ ] Changelog entry prepared (see `CHANGELOG.md`) if user-visible behavior changes
-- [ ] I agree to the [Code of Conduct](../CODE_OF_CONDUCT.md)
+- [ ] I agree to the [Code of Conduct](../../CODE_OF_CONDUCT.md)
 
 ## Additional notes
 - Risks or follow-ups
