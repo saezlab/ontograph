@@ -8,6 +8,8 @@ formats and integrates with downloader and catalog utilities.
 from abc import ABC, abstractmethod
 from typing import Any
 import logging
+import re
+import tempfile
 from pathlib import Path
 from functools import cached_property
 
@@ -168,6 +170,77 @@ class ProntoLoaderAdapter(OntologyLoaderPort):
         result = from_path(file).best()
         return result.encoding
 
+    def _fix_malformed_dates(self, path_file: Path) -> Path:
+        """Fix malformed date formats in OBO files.
+
+        Some OBO files (e.g., PSI-MI) have dates in non-standard format:
+        - Header: "date: 15:04:2021 22:57" instead of ISO format (DD:MM:YYYY)
+
+        When fastobo encounters a malformed header date, it appears to corrupt
+        the date parser, causing it to fail when parsing term creation_date fields
+        (even though those are in proper ISO format). The solution is to remove
+        both the malformed header date AND all creation_date fields.
+
+        Args:
+            path_file: Path to the original OBO file
+
+        Returns:
+            Path to the fixed OBO file (original if no fixes needed, temp file if fixed)
+        """
+        try:
+            encoding = self.find_file_encoding(path_file)
+            with open(path_file, 'r', encoding=encoding) as f:
+                content = f.read()
+
+            # Check if the file has malformed header dates (DD:MM:YYYY format)
+            malformed_date_pattern = r'^date: \d{2}:\d{2}:\d{4}.*\n'
+            match = re.search(malformed_date_pattern, content, flags=re.MULTILINE)
+
+            if not match:
+                # No malformed dates, return original file
+                return path_file
+
+            logger.warning(
+                f"Detected malformed date format in {path_file}, fixing..."
+            )
+
+            # Remove the malformed header date line
+            fixed_content = re.sub(
+                malformed_date_pattern,
+                '',
+                content,
+                flags=re.MULTILINE
+            )
+
+            # Also remove all creation_date fields from terms
+            # This is necessary because the malformed header date corrupts
+            # fastobo's date parser, causing it to fail on creation_date fields
+            fixed_content = re.sub(
+                r'^creation_date:.*\n',
+                '',
+                fixed_content,
+                flags=re.MULTILINE
+            )
+
+            # Write to temporary file
+            temp_file = tempfile.NamedTemporaryFile(
+                mode='w',
+                suffix='.obo',
+                delete=False,
+                encoding=encoding
+            )
+            temp_file.write(fixed_content)
+            temp_file.close()
+
+            logger.info(
+                f"Fixed malformed dates in {path_file}, using temporary file: {temp_file.name}"
+            )
+            return Path(temp_file.name)
+
+        except Exception as e:
+            logger.warning(f"Failed to fix malformed dates: {e}, using original file")
+            return path_file
+
     def _load_ontology(
         self, path_file: Path
     ) -> tuple[pronto.Ontology, str | None]:
@@ -189,18 +262,37 @@ class ProntoLoaderAdapter(OntologyLoaderPort):
             logger.error(error_msg)
             raise FileNotFoundError(error_msg)
 
-        logger.debug(f'Parsing ontology file with Pronto: {path_file}')
+        # Fix malformed dates if needed
+        fixed_path = self._fix_malformed_dates(path_file)
+
+        logger.debug(f'Parsing ontology file with Pronto: {fixed_path}')
         try:
             ontology: pronto.Ontology = pronto.Ontology(
-                path_file, encoding=self.find_file_encoding(path_file)
+                fixed_path, encoding=self.find_file_encoding(fixed_path)
             )
         except (TypeError, ValueError) as e:
             error_msg = f'Failed to load ontology from {path_file}: {str(e)}'
             logger.exception(error_msg)
+            # Clean up temp file if it was created
+            if fixed_path != path_file:
+                try:
+                    fixed_path.unlink()
+                except Exception:
+                    pass
             raise ValueError(error_msg) from e
 
         ontology_id: str | None = self._extract_ontology_id(ontology)
         logger.debug(f'Loaded ontology with ID: {ontology_id}')
+
+        # Clean up temp file after successful loading (if different from original)
+        # Note: We keep the temp file until after ontology is fully loaded
+        if fixed_path != path_file:
+            try:
+                fixed_path.unlink()
+                logger.debug(f'Cleaned up temporary file: {fixed_path}')
+            except Exception as e:
+                logger.warning(f'Failed to clean up temporary file {fixed_path}: {e}')
+
         return ontology, ontology_id
 
     def _create_ontology_object(
