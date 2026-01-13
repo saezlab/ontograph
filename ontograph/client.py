@@ -456,22 +456,22 @@ class ClientOntology:
         return self._ontology
 
     # ---- Navigation Methods
-    # def get_term(self, term_id: str) -> object:
-    #     """Retrieve a term by its ID.
+    def get_term(self, term_id: str) -> object:
+        """Retrieve a term by its ID.
 
-    #     Args:
-    #         term_id (str): Term identifier.
+        Args:
+            term_id (str): Term identifier.
 
-    #     Returns:
-    #         object: Term object.
+        Returns:
+            object: Term object.
 
-    #     Example:
-    #         >>> client = ClientOntology()
-    #         >>> ontology = client.load(file_path_ontology="./tests/resources/dummy_ontology.obo")
-    #         >>> client.get_term("A")
-    #         Term('A', name='termA')
-    #     """
-    #     return self._navigator.get_term(term_id=term_id)
+        Example:
+            >>> client = ClientOntology()
+            >>> ontology = client.load(file_path_ontology="./tests/resources/dummy_ontology.obo")
+            >>> client.get_term("A")
+            Term('A', name='termA')
+        """
+        return self._navigator.get_term(term_id=term_id)
 
     def get_parents(self, term_id: str, include_self: bool = False) -> list:
         """Get parent terms of a given term.
