@@ -28,7 +28,6 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Bio-Informatics"
 ]
 dependencies = [
-    "toml",
     "pronto",
     "pooch[progress]",
     "pyyaml",

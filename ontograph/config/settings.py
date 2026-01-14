@@ -1,6 +1,6 @@
+from importlib.metadata import version
 from pathlib import Path
 
-import toml
 from appdirs import user_cache_dir
 
 __all__ = [
@@ -13,14 +13,9 @@ __all__ = [
     'DEFAULT_FORMAT_ONTOLOGY',
 ]
 
-# Read package information from pyproject.toml
-_PYPROJECT_PATH = Path(__file__).parents[2] / 'pyproject.toml'
-with open(_PYPROJECT_PATH) as f:
-    _PYPROJECT = toml.load(f)
-
-# Extract package metadata
-PACKAGE_NAME = _PYPROJECT['project']['name']
-PACKAGE_VERSION = _PYPROJECT['project']['version']
+# Package metadata from installed package
+PACKAGE_NAME = 'ontograph'
+PACKAGE_VERSION = version(PACKAGE_NAME)
 
 # Use package name (ontograph) from `pyproject.toml`` for cache directory
 DEFAULT_CACHE_DIR = Path(
