@@ -561,6 +561,7 @@ class EdgesContainer:
         self, terms: list, lookup_tables: LookUpTables
     ) -> dict:
         edge_container = self._create_edges_index_containers(terms)
+        skipped_unresolved_targets = 0
         for term in tqdm(terms, desc='Building edge containers', unit='term'):
             # Populate 'is_a' relationships
             for subclass in term.subclasses(with_self=False, distance=1):
@@ -577,7 +578,15 @@ class EdgesContainer:
             # Populate other relationships
             for rel, targets in term.relationships.items():
                 rel_name = rel.name.lower().replace(' ', '_')
-                for target in targets:
+                target_iterator = iter(targets)
+                while True:
+                    try:
+                        target = next(target_iterator)
+                    except StopIteration:
+                        break
+                    except KeyError:
+                        skipped_unresolved_targets += 1
+                        continue
                     if target.obsolete:
                         continue
                     edge_container[rel_name]['rows'].append(
@@ -591,6 +600,12 @@ class EdgesContainer:
         for _rel, data in edge_container.items():
             data['rows'] = np.array(data['rows'], dtype=np.int64)
             data['cols'] = np.array(data['cols'], dtype=np.int64)
+        if skipped_unresolved_targets:
+            logger.warning(
+                'Skipped %d unresolved relationship targets while building '
+                'edge containers.',
+                skipped_unresolved_targets,
+            )
         return edge_container
 
 
@@ -614,6 +629,7 @@ class EdgesDataframe:
     ) -> 'pd.DataFrame':
         """Create a DataFrame with fields: source_id, source_name, relation, target_id, target_name, is_obsolete."""
         rows = []
+        skipped_unresolved_targets = 0
         for term in tqdm(terms, desc='Building edge dataframe', unit='term'):
             if not include_obsolete and term.obsolete:
                 continue
@@ -621,15 +637,30 @@ class EdgesDataframe:
             source_name = term.name
             for rel, targets in term.relationships.items():
                 rel_name = rel.name
-                for target in targets:
+                target_iterator = iter(targets)
+                while True:
+                    try:
+                        target = next(target_iterator)
+                    except StopIteration:
+                        break
+                    except KeyError:
+                        skipped_unresolved_targets += 1
+                        continue
+                    try:
+                        target_id = target.id
+                        target_name = target.name
+                        target_obsolete = target.obsolete
+                    except KeyError:
+                        skipped_unresolved_targets += 1
+                        continue
                     rows.append(
                         {
                             'source_id': source_id,
                             'source_name': source_name,
                             'relation': rel_name,
-                            'target_id': target.id,
-                            'target_name': target.name,
-                            'is_obsolete': target.obsolete,
+                            'target_id': target_id,
+                            'target_name': target_name,
+                            'is_obsolete': target_obsolete,
                         }
                     )
             # Add is_a relationships (subclasses)
@@ -651,6 +682,11 @@ class EdgesDataframe:
         df.sort_values(['source_id', 'relation', 'target_id'], inplace=True)
         df.reset_index(drop=True, inplace=True)
         df.insert(0, 'index', range(len(df)))
+        if skipped_unresolved_targets:
+            logger.warning(
+                'Skipped %d unresolved relationship targets while building edges.',
+                skipped_unresolved_targets,
+            )
         return df
 
 
