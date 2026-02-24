@@ -1434,7 +1434,6 @@ dependencies = [
     { name = "pronto" },
     { name = "python-graphblas", extra = ["default"] },
     { name = "pyyaml" },
-    { name = "toml" },
 ]
 
 [package.optional-dependencies]
@@ -1489,7 +1488,6 @@ requires-dist = [
     { name = "pyyaml" },
     { name = "rdflib", marker = "extra == 'semantic'", specifier = ">=6.0.0" },
     { name = "ruff", marker = "extra == 'tests'" },
-    { name = "toml" },
     { name = "tox", marker = "extra == 'tests'", specifier = ">=3.20.1" },
     { name = "tox-gh", marker = "extra == 'tests'", specifier = ">=1.5.0" },
     { name = "twine", marker = "extra == 'dev'" },
@@ -2409,15 +2407,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/d0/1d/aec62518d90248fd5bab00245413ea81d5283f196fa124862eeded4ef692/test_results_parser-0.5.4-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:7ba3a7883b0fc1102a1306c2fb9e2ab65f6c9e47ff7136a16142694fce08aafb", size = 1247321, upload-time = "2025-03-04T16:38:43.383Z" },
     { url = "https://files.pythonhosted.org/packages/24/e3/b81fb40b2bfe8c1f5938c09a0e338c64a0ef380152c2910f93492d019fdc/test_results_parser-0.5.4-cp312-cp312-win32.whl", hash = "sha256:b2db33a1ab9b6e469f39a661c5807602562e96111a6d887692f4312bb9932500", size = 716564, upload-time = "2025-03-04T16:39:56.524Z" },
     { url = "https://files.pythonhosted.org/packages/d5/cb/7fcaa2de89d1553e0b989e3b160eb3448ad306c152d8b3b60426be2a2836/test_results_parser-0.5.4-cp312-cp312-win_amd64.whl", hash = "sha256:397ddb2285dc27e47f1785bd6239e80bdc632db99abe1f2698c1aa46c3bc5479", size = 792880, upload-time = "2025-03-04T16:39:49.32Z" },
-]
-
-[[package]]
-name = "toml"
-version = "0.10.2"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/be/ba/1f744cdc819428fc6b5084ec34d9b30660f6f9daaf70eead706e3203ec3c/toml-0.10.2.tar.gz", hash = "sha256:b3bda1d108d5dd99f4a20d24d9c348e91c4db7ab1b749200bded2f839ccbe68f", size = 22253, upload-time = "2020-11-01T01:40:22.204Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/44/6f/7120676b6d73228c96e17f1f794d8ab046fc910d781c8d151120c3f1569e/toml-0.10.2-py2.py3-none-any.whl", hash = "sha256:806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b", size = 16588, upload-time = "2020-11-01T01:40:20.672Z" },
 ]
 
 [[package]]
