@@ -1,12 +1,3 @@
-#!/usr/bin/env python3
-"""Benchmark memory required to load CHEBI with memray, per backend.
-
-This script has two modes:
-1) Driver mode (default): orchestrates memray runs, generates HTML reports,
-   parses peak memory, and prints/saves a summary.
-2) Worker mode (--worker): performs only `ClientOntology.load(...)`.
-"""
-
 from __future__ import annotations
 
 import argparse
