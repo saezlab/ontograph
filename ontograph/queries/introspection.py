@@ -245,8 +245,8 @@ class IntrospectionPronto(IntrospectionOntology):
                 print(f'{node["id"]}: {node["name"]}')
             return
         # Otherwise, use tree printing
-        root = IntrospectionOntology._build_tree_from_trajectories(trajectories)
-        IntrospectionOntology._print_ascii_tree(root)
+        root = IntrospectionPronto._build_tree_from_trajectories(trajectories)
+        IntrospectionPronto._print_ascii_tree(root)
 
     @staticmethod
     def _build_tree_from_trajectories(trajectories: list[dict]) -> object:
