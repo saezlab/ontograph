@@ -5,12 +5,12 @@ from files, catalogs, and URLs. It supports adapters for different ontology
 formats and integrates with downloader and catalog utilities.
 """
 
+import re
 from abc import ABC, abstractmethod
 from typing import Any
 import logging
-import re
-import tempfile
 from pathlib import Path
+import tempfile
 from functools import cached_property
 
 import pronto
@@ -189,56 +189,51 @@ class ProntoLoaderAdapter(OntologyLoaderPort):
         """
         try:
             encoding = self.find_file_encoding(path_file)
-            with open(path_file, 'r', encoding=encoding) as f:
+            with open(path_file, encoding=encoding) as f:
                 content = f.read()
 
             # Check if the file has malformed header dates (DD:MM:YYYY format)
             malformed_date_pattern = r'^date: \d{2}:\d{2}:\d{4}.*\n'
-            match = re.search(malformed_date_pattern, content, flags=re.MULTILINE)
+            match = re.search(
+                malformed_date_pattern, content, flags=re.MULTILINE
+            )
 
             if not match:
                 # No malformed dates, return original file
                 return path_file
 
             logger.warning(
-                f"Detected malformed date format in {path_file}, fixing..."
+                f'Detected malformed date format in {path_file}, fixing...'
             )
 
             # Remove the malformed header date line
             fixed_content = re.sub(
-                malformed_date_pattern,
-                '',
-                content,
-                flags=re.MULTILINE
+                malformed_date_pattern, '', content, flags=re.MULTILINE
             )
 
             # Also remove all creation_date fields from terms
             # This is necessary because the malformed header date corrupts
             # fastobo's date parser, causing it to fail on creation_date fields
             fixed_content = re.sub(
-                r'^creation_date:.*\n',
-                '',
-                fixed_content,
-                flags=re.MULTILINE
+                r'^creation_date:.*\n', '', fixed_content, flags=re.MULTILINE
             )
 
             # Write to temporary file
             temp_file = tempfile.NamedTemporaryFile(
-                mode='w',
-                suffix='.obo',
-                delete=False,
-                encoding=encoding
+                mode='w', suffix='.obo', delete=False, encoding=encoding
             )
             temp_file.write(fixed_content)
             temp_file.close()
 
             logger.info(
-                f"Fixed malformed dates in {path_file}, using temporary file: {temp_file.name}"
+                f'Fixed malformed dates in {path_file}, using temporary file: {temp_file.name}'
             )
             return Path(temp_file.name)
 
-        except Exception as e:
-            logger.warning(f"Failed to fix malformed dates: {e}, using original file")
+        except (OSError, UnicodeError) as e:
+            logger.warning(
+                f'Failed to fix malformed dates: {e}, using original file'
+            )
             return path_file
 
     def _load_ontology(
@@ -277,7 +272,7 @@ class ProntoLoaderAdapter(OntologyLoaderPort):
             if fixed_path != path_file:
                 try:
                     fixed_path.unlink()
-                except Exception:
+                except OSError:
                     pass
             raise ValueError(error_msg) from e
 
@@ -290,8 +285,10 @@ class ProntoLoaderAdapter(OntologyLoaderPort):
             try:
                 fixed_path.unlink()
                 logger.debug(f'Cleaned up temporary file: {fixed_path}')
-            except Exception as e:
-                logger.warning(f'Failed to clean up temporary file {fixed_path}: {e}')
+            except OSError as e:
+                logger.warning(
+                    f'Failed to clean up temporary file {fixed_path}: {e}'
+                )
 
         return ontology, ontology_id
 

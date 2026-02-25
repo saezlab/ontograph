@@ -1,5 +1,5 @@
-from importlib.metadata import version
 from pathlib import Path
+from importlib.metadata import version
 
 from appdirs import user_cache_dir
 
