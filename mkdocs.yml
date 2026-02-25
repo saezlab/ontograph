@@ -63,6 +63,7 @@ nav:
                 -   relations: reference/source/ontograph/queries/relations.md
                 -   introspection: reference/source/ontograph/queries/introspection.md
 -   Community:
+    -   Events: community/events/derse_26.md
     -   Join Us: community/index.md
     -   Where to Start: community/contribute.md
     -   Contribute to the Documentation: community/contribute-docs.md
