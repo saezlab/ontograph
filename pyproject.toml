@@ -32,7 +32,8 @@ dependencies = [
     "pooch[progress]",
     "pyyaml",
     "appdirs>=1.4.4",
-    "python-graphblas[default]>=2025.2.0"
+    "python-graphblas[default]>=2025.2.0",
+    "download-manager",
 ]
 description = "A lightweight Python package for loading, representing, and efficiently querying biological ontologies as graph structures."
 license = "MIT"
@@ -346,3 +347,10 @@ python = [
 [tool.uv.sources]
 jupyter-contrib-nbextensions = {git = "https://github.com/deeenes/jupyter_contrib_nbextensions.git", branch = "master"}
 nbsphinx = {git = "https://github.com/deeenes/nbsphinx", branch = "timings"}
+saezlab-core = { git = "https://github.com/saezlab/saezlab_core.git", rev = "feat/mvp" }
+download-manager = { git = "https://github.com/saezlab/download-manager.git", rev = "/fix/cache-manager-numpy" }
+
+[dependency-groups]
+dev = [
+    "saezlab-core",
+]
