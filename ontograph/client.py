@@ -376,6 +376,7 @@ class ClientOntology:
             >>> client = ClientOntology()
             >>> client.load(source="./tests/resources/dummy_ontology.obo")
         """
+        logger.info('--- Ontology load session start ---')
         logger.info('Loading ontology: %s', source)
         resolved_downloader = (
             _resolve_downloader(self._cache_dir, downloader)
@@ -462,6 +463,7 @@ class ClientOntology:
         self._initialize_queries(backend)
 
         logger.info('Ontology loading complete.')
+        logger.info('--- Ontology load session end ---')
 
     def _initialize_queries(self, backend: str) -> None:
         """Initializes query adapters for navigation, relations, and introspection based on the specified backend.

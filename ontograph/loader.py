@@ -263,7 +263,7 @@ class ProntoLoaderAdapter(OntologyLoaderPort):
             FileNotFoundError: If file doesn't exist.
             ValueError: If parsing fails.
         """
-        logger.debug(f'Loading ontology from file: {path_file}')
+        logger.debug(f'Parsing ontology file: {path_file}')
         if not path_file.exists():
             error_msg = f'Ontology file not found: {path_file}'
             logger.error(error_msg)
@@ -478,7 +478,7 @@ class ProntoLoaderAdapter(OntologyLoaderPort):
                     name_id, format, downloader=downloader
                 )
 
-        logger.debug(f'Loading ontology from file: {file_path}')
+        logger.debug(f'Resolved local file: {file_path}')
         ontology_source, _ = self._load_ontology(file_path)
 
         logger.debug(f'Retrieving metadata for ontology: {name_id}')
