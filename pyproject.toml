@@ -152,6 +152,9 @@ report_level = "INFO"
 
 # ---- Ruff: a fast Python linter and formatter.
 [tool.ruff]
+exclude = [
+    "sandbox/"
+]
 extend-include = ["*.ipynb"]
 line-length = 80
 target-version = "py312"
