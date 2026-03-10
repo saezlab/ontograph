@@ -4,8 +4,7 @@
 logging:
     handlers:
         file:
-            filename: logs/my_saezapp_logger.log
-
+            filename: logs/app_go_logger.log
     loggers:
         default:
             level: DEBUG
@@ -21,10 +20,6 @@ logging:
             level: INFO
             handlers: [file, console]
             propagate: false
-
-    root:
-        level: WARNING
-        handlers: [file, console]
 
 # -------------------------------------
 # ----      Integrations          -----

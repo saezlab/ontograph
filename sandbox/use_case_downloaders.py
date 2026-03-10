@@ -1,11 +1,14 @@
 import pkg_infra
 
 from ontograph.client import ClientCatalog, ClientOntology
-from ontograph.downloader import PoochDownloaderAdapter
-from ontograph.config.settings import DEFAULT_CACHE_DIR
+from ontograph.downloader import (
+    PoochDownloaderAdapter,
+    DownloadManagerAdapter)
+
 
 def main():
     workspace = './'
+    cache_dir = './data/out'
 
     # Create a session for the app
     session = pkg_infra.get_session(workspace=workspace, include_location=True)
@@ -21,17 +24,18 @@ def main():
     logger.critical('This is a CRITICAL message')
 
     # Call a given downloader from OntoGraph
-    downloader = PoochDownloaderAdapter(cache_dir=DEFAULT_CACHE_DIR)
+    #downloader = PoochDownloaderAdapter(cache_dir=cache_dir)
+    downloader = DownloadManagerAdapter(cache_dir=cache_dir)
 
     # Download a catalog
-    catalog = ClientCatalog(cache_dir='./data/out', downloader=downloader)
+    catalog = ClientCatalog(cache_dir=cache_dir, downloader=downloader)
     catalog.load_catalog()
 
     # print the schema tree
     #catalog.print_catalog_schema_tree()
 
     # Download a given ontology
-    client = ClientOntology(cache_dir='./data/out', downloader=downloader)
+    client = ClientOntology(cache_dir=cache_dir, downloader=downloader)
     client.load(source='go')  # catalog download
 
 if __name__ == '__main__':
