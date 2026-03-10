@@ -17,10 +17,7 @@ import pronto
 from charset_normalizer import from_path
 
 from ontograph.models import Ontology, CatalogOntologies
-from ontograph.downloader import (
-    DownloaderPort,
-    PoochDownloaderAdapter,
-)
+from ontograph.downloader import DownloaderPort, get_default_downloader
 from ontograph.config.settings import (
     DEFAULT_CACHE_DIR,
     SUPPORTED_FORMATS_ONTOGRAPH,
@@ -55,12 +52,18 @@ class OntologyLoaderPort(ABC):
         pass
 
     @abstractmethod
-    def load_from_catalog(self, name_id: str, format: str = 'obo') -> Ontology:
+    def load_from_catalog(
+        self,
+        name_id: str,
+        format: str = 'obo',
+        downloader: DownloaderPort | None = None,
+    ) -> Ontology:
         """Load ontology from a catalog.
 
         Args:
             name_id (str): Ontology identifier.
             format (str, optional): Ontology format. Defaults to 'obo'.
+            downloader (DownloaderPort | None, optional): Downloader implementation. Defaults to None.
 
         Returns:
             Ontology: Loaded ontology object.
@@ -93,16 +96,22 @@ class ProntoLoaderAdapter(OntologyLoaderPort):
     Loads ontologies from files, catalogs, and URLs using the Pronto library.
     """
 
-    def __init__(self, cache_dir: str | Path | None = None) -> None:
+    def __init__(
+        self,
+        cache_dir: str | Path | None = None,
+        downloader: DownloaderPort | None = None,
+    ) -> None:
         """Initialize the ProntoLoaderAdapter.
 
         Args:
             cache_dir (str | Path | None, optional): Directory for cached files. Defaults to None.
+            downloader (DownloaderPort | None, optional): Downloader adapter for remote resources. Defaults to None.
         """
         self._cache_dir: Path | None = (
             Path(cache_dir) if cache_dir else DEFAULT_CACHE_DIR
         )
         self._ontology: Ontology | None = None
+        self._downloader: DownloaderPort | None = downloader
 
     @cached_property
     def catalog(self) -> CatalogOntologies:
@@ -112,7 +121,10 @@ class ProntoLoaderAdapter(OntologyLoaderPort):
             CatalogOntologies: The ontology catalog instance.
         """
         logger.debug('Initializing ontology catalog')
-        return CatalogOntologies(cache_dir=self._cache_dir)
+        return CatalogOntologies(
+            cache_dir=self._cache_dir,
+            downloader=self._downloader,
+        )
 
     @property
     def cache_dir(self) -> Path:
@@ -265,6 +277,18 @@ class ProntoLoaderAdapter(OntologyLoaderPort):
             ontology: pronto.Ontology = pronto.Ontology(
                 fixed_path, encoding=self.find_file_encoding(fixed_path)
             )
+        except PermissionError:
+            # Fallback for restricted environments where multiprocessing locks
+            # are not permitted (pronto ThreadPool uses multiprocessing pool).
+            try:
+                from pronto.utils import pool as pronto_pool
+
+                pronto_pool._ThreadPool = None
+            except (AttributeError, ImportError):
+                pass
+            ontology = pronto.Ontology(
+                fixed_path, encoding=self.find_file_encoding(fixed_path)
+            )
         except (TypeError, ValueError) as e:
             error_msg = f'Failed to load ontology from {path_file}: {str(e)}'
             logger.exception(error_msg)
@@ -359,12 +383,18 @@ class ProntoLoaderAdapter(OntologyLoaderPort):
             )
             raise
 
-    def _download_ontology(self, name_id: str, format: str) -> Path:
+    def _download_ontology(
+        self,
+        name_id: str,
+        format: str,
+        downloader: DownloaderPort | None = None,
+    ) -> Path:
         """Download ontology from catalog.
 
         Args:
             name_id (str): Ontology identifier.
             format (str): Ontology format.
+            downloader (DownloaderPort | None, optional): Downloader implementation. Defaults to None.
 
         Returns:
             Path: Path to downloaded file.
@@ -373,8 +403,13 @@ class ProntoLoaderAdapter(OntologyLoaderPort):
             FileNotFoundError: If file can't be downloaded.
             NotImplementedError: If download functionality is not implemented.
         """
-        downloader = PoochDownloaderAdapter(cache_dir=self.cache_dir)
-        logger.debug(f'Created default downloader: {type(downloader).__name__}')
+        if downloader is None:
+            downloader = self._downloader
+        if downloader is None:
+            downloader = get_default_downloader(cache_dir=self.cache_dir)
+            logger.debug(
+                f'Created default downloader: {type(downloader).__name__}'
+            )
 
         resources = [{'name_id': name_id, 'format': format}]
         try:
@@ -396,12 +431,18 @@ class ProntoLoaderAdapter(OntologyLoaderPort):
 
         return path_download[name_id]
 
-    def load_from_catalog(self, name_id: str, format: str = 'obo') -> Ontology:
+    def load_from_catalog(
+        self,
+        name_id: str,
+        format: str = 'obo',
+        downloader: DownloaderPort | None = None,
+    ) -> Ontology:
         """Load ontology from the OBO Foundry catalog, downloading if needed.
 
         Args:
             name_id (str): Ontology identifier.
             format (str, optional): Ontology format. Defaults to "obo".
+            downloader (DownloaderPort | None, optional): Downloader implementation. Defaults to None.
 
         Returns:
             Ontology: Loaded Ontology object.
@@ -424,7 +465,12 @@ class ProntoLoaderAdapter(OntologyLoaderPort):
             logger.debug(
                 f'Ontology file not found locally, downloading: {name_id}.{format}'
             )
-            file_path = self._download_ontology(name_id, format)
+            if downloader is None:
+                file_path = self._download_ontology(name_id, format)
+            else:
+                file_path = self._download_ontology(
+                    name_id, format, downloader=downloader
+                )
 
         logger.debug(f'Loading ontology from file: {file_path}')
         ontology_source, _ = self._load_ontology(file_path)
@@ -462,7 +508,9 @@ class ProntoLoaderAdapter(OntologyLoaderPort):
             ValueError: If parsing fails.
         """
         if downloader is None:
-            downloader = PoochDownloaderAdapter(cache_dir=self.cache_dir)
+            downloader = self._downloader
+        if downloader is None:
+            downloader = get_default_downloader(cache_dir=self.cache_dir)
             logger.debug(
                 f'Created default downloader: {type(downloader).__name__}'
             )

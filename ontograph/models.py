@@ -1,5 +1,6 @@
 import re
 import pprint
+from typing import TYPE_CHECKING
 import logging
 from pathlib import Path
 from dataclasses import dataclass
@@ -7,16 +8,19 @@ from dataclasses import dataclass
 from tqdm import tqdm
 import yaml
 import numpy as np
-from pooch import retrieve
 import pandas as pd
 import pronto
 import graphblas as gb
 
+from ontograph.downloader import get_default_downloader
 from ontograph.config.settings import (
     DEFAULT_CACHE_DIR,
     NAME_OBO_FOUNDRY_CATALOG,
     OBO_FOUNDRY_REGISTRY_URL,
 )
+
+if TYPE_CHECKING:
+    from ontograph.downloader import DownloaderPort
 
 __all__ = ['CatalogOntologies', 'Ontology']
 
@@ -33,43 +37,60 @@ class CatalogOntologies:
     Provides methods to download, load, and query the ontology registry.
     """
 
-    def __init__(self, cache_dir: Path = DEFAULT_CACHE_DIR) -> None:
+    def __init__(
+        self,
+        cache_dir: Path = DEFAULT_CACHE_DIR,
+        downloader: 'DownloaderPort | None' = None,
+    ) -> None:
         """Initialize the catalog manager.
 
         Args:
             cache_dir (Path): Directory for caching registry files.
+            downloader (DownloaderPort | None, optional): Downloader adapter for remote resources. Defaults to None.
         """
         self.cache_dir = cache_dir
         self._catalog: dict | None = None
+        self._downloader = downloader
 
         # Create cache directory if this one doesn't exist.
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
-    def _download_registry(self) -> Path:
+    def _download_registry(
+        self, downloader: 'DownloaderPort | None' = None
+    ) -> Path:
         """Download the latest catalog file.
 
         Returns:
             Path: Path to the downloaded catalog file.
         """
+
         catalog_path = self.cache_dir / NAME_OBO_FOUNDRY_CATALOG
-        retrieve(
-            url=OBO_FOUNDRY_REGISTRY_URL,
-            known_hash=None,
-            fname=NAME_OBO_FOUNDRY_CATALOG,
-            path=self.cache_dir,
+        if downloader is None:
+            downloader = self._downloader
+        if downloader is None:
+            downloader = get_default_downloader(cache_dir=self.cache_dir)
+
+        downloader.fetch_from_url(
+            url_ontology=OBO_FOUNDRY_REGISTRY_URL,
+            filename=NAME_OBO_FOUNDRY_CATALOG,
         )
         return catalog_path
 
-    def load_catalog(self, force_download: bool = False) -> None:
+    def load_catalog(
+        self,
+        force_download: bool = False,
+        downloader: 'DownloaderPort | None' = None,
+    ) -> None:
         """Load the ontology catalog from disk or download if needed.
 
         Args:
             force_download (bool): If True, force download the catalog file.
+            downloader (DownloaderPort | None, optional): Downloader implementation. Defaults to None.
         """
         catalog_path = self.cache_dir / NAME_OBO_FOUNDRY_CATALOG
 
         if force_download or not catalog_path.exists():
-            catalog_path = self._download_registry()
+            catalog_path = self._download_registry(downloader=downloader)
 
         with open(catalog_path) as f:
             self._catalog = yaml.safe_load(f)

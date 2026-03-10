@@ -5,14 +5,17 @@ downloading ontology resources from both direct URLs and ontology catalogs.
 """
 
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
 import logging
 from pathlib import Path
 
 from pooch import retrieve
 import requests
 
-from ontograph.models import CatalogOntologies
 from ontograph.config.settings import DEFAULT_FORMAT_ONTOLOGY
+
+if TYPE_CHECKING:
+    from ontograph.models import CatalogOntologies
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
@@ -22,6 +25,7 @@ __all__ = [
     'DownloadManagerAdapter',
     'DownloaderPort',
     'PoochDownloaderAdapter',
+    'get_default_downloader',
 ]
 
 
@@ -55,7 +59,9 @@ class DownloaderPort(ABC):
 
     @abstractmethod
     def fetch_from_catalog(
-        self, resources: list[dict[str, str]], catalog: CatalogOntologies
+        self,
+        resources: list[dict[str, str]],
+        catalog: 'CatalogOntologies',
     ) -> dict[str, Path]:
         """Download multiple ontology files defined in a catalog.
 
@@ -71,6 +77,28 @@ class DownloaderPort(ABC):
             KeyError: If a resource is missing required fields
         """
         pass
+
+
+def get_default_downloader(
+    cache_dir: Path, *, backend: str | None = None
+) -> DownloaderPort:
+    """Return the default downloader adapter.
+
+    Args:
+        cache_dir: Directory to store downloaded files.
+        backend: Override the configured default ('pooch' or 'download_manager').
+    """
+    from ontograph.config.settings import DEFAULT_DOWNLOADER
+
+    selection = (backend or DEFAULT_DOWNLOADER).strip().lower()
+    if selection == 'pooch':
+        return PoochDownloaderAdapter(cache_dir=cache_dir)
+    if selection == 'download_manager':
+        return DownloadManagerAdapter(cache_dir=cache_dir)
+
+    raise ValueError(
+        "Unknown downloader backend. Use 'pooch' or 'download_manager'."
+    )
 
 
 # ----------------------------------------------------------------------
@@ -151,7 +179,9 @@ class PoochDownloaderAdapter(DownloaderPort):
         return result_path
 
     def fetch_from_catalog(
-        self, resources: list[dict[str, str]], catalog: CatalogOntologies
+        self,
+        resources: list[dict[str, str]],
+        catalog: 'CatalogOntologies',
     ) -> dict[str, Path]:
         """Download multiple ontology files defined in a catalog.
 
@@ -196,7 +226,7 @@ class PoochDownloaderAdapter(DownloaderPort):
         return name_id, format_type
 
     def _get_resource_url(
-        self, name_id: str, format_type: str, catalog: CatalogOntologies
+        self, name_id: str, format_type: str, catalog: 'CatalogOntologies'
     ) -> str:
         url = catalog.get_download_url(name_id, format_type)
         if not url:
@@ -283,7 +313,9 @@ class DownloadManagerAdapter(DownloaderPort):
         return result
 
     def fetch_from_catalog(
-        self, resources: list[dict[str, str]], catalog: CatalogOntologies
+        self,
+        resources: list[dict[str, str]],
+        catalog: 'CatalogOntologies',
     ) -> dict[str, Path]:
         """Download multiple ontology files defined in a catalog.
 
@@ -337,7 +369,7 @@ class DownloadManagerAdapter(DownloaderPort):
         return name_id, format_type
 
     def _get_resource_url(
-        self, name_id: str, format_type: str, catalog: CatalogOntologies
+        self, name_id: str, format_type: str, catalog: 'CatalogOntologies'
     ) -> str:
         url = catalog.get_download_url(name_id, format_type)
         if not url:

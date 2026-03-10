@@ -73,13 +73,22 @@ class ClientCatalog:
         {'id': 'ado', 'title': "Alzheimer's Disease Ontology"}
     """
 
-    def __init__(self, cache_dir: str = DEFAULT_CACHE_DIR) -> None:
+    def __init__(
+        self,
+        cache_dir: str = DEFAULT_CACHE_DIR,
+        downloader: DownloaderPort | None = None,
+    ) -> None:
         """Initialize the ClientCatalog.
 
         Args:
             cache_dir (str, optional): Directory for caching catalog data. Defaults to DEFAULT_CACHE_DIR.
+            downloader (DownloaderPort | None, optional): Downloader adapter for remote resources. Defaults to None.
         """
-        self.__catalog_adapter = CatalogOntologies(cache_dir=Path(cache_dir))
+        self.__catalog_adapter = CatalogOntologies(
+            cache_dir=Path(cache_dir),
+            downloader=downloader,
+        )
+        self._downloader = downloader
 
     def load_catalog(self, force_download: bool = False) -> None:
         """Load the ontology catalog.
@@ -92,7 +101,8 @@ class ClientCatalog:
             >>> catalog.load_catalog()
         """
         return self.__catalog_adapter.load_catalog(
-            force_download=force_download
+            force_download=force_download,
+            downloader=self._downloader,
         )
 
     def catalog_as_dict(self) -> dict:
@@ -218,14 +228,20 @@ class ClientOntology:
         [Term('Z', name='root')]
     """
 
-    def __init__(self, cache_dir: str = DEFAULT_CACHE_DIR) -> None:
+    def __init__(
+        self,
+        cache_dir: str = DEFAULT_CACHE_DIR,
+        downloader: DownloaderPort | None = None,
+    ) -> None:
         """Initialize the ClientOntology.
 
         Args:
             cache_dir (str, optional): Directory for caching ontology data. Defaults to DEFAULT_CACHE_DIR.
+            downloader (DownloaderPort | None, optional): Downloader adapter for remote resources. Defaults to None.
         """
         self._cache_dir = Path(cache_dir)
         self._ontology = None
+        self._downloader = downloader
         self._lookup_tables = None
         self._navigator = None
         self._relations = None
@@ -346,7 +362,9 @@ class ClientOntology:
             >>> client.load(source="./tests/resources/dummy_ontology.obo")
         """
         logger.info(f'Loading ontology from source: {source} ...')
-        loader = ProntoLoaderAdapter(cache_dir=self._cache_dir)
+        loader = ProntoLoaderAdapter(
+            cache_dir=self._cache_dir, downloader=self._downloader
+        )
 
         path = Path(source)
         ontology = None
@@ -368,7 +386,10 @@ class ClientOntology:
 
         # 3. Case 3: Try OBO catalog (if file missing or simple ID)
         else:
-            catalog_client = ClientCatalog(cache_dir=self._cache_dir)
+            catalog_client = ClientCatalog(
+                cache_dir=self._cache_dir,
+                downloader=self._downloader,
+            )
             catalog_client.load_catalog()
             available = [
                 o['id'] for o in catalog_client.list_available_ontologies()
@@ -380,7 +401,9 @@ class ClientOntology:
                     f"Ontology '{name_id}' found in catalog, downloading..."
                 )
                 ontology = loader.load_from_catalog(
-                    name_id=name_id, format='obo'
+                    name_id=name_id,
+                    format='obo',
+                    downloader=self._downloader,
                 )
             else:
                 msg = f"Ontology '{source}' not found as file, URL, or catalog entry."
