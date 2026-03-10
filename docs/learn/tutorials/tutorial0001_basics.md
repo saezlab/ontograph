@@ -15,6 +15,7 @@ DEFAULT_DOWNLOADER = "download_manager"
 ```
 
 Now any client will use the configured backend unless you pass a downloader explicitly.
+Only client classes accept backend strings; lower-level components expect a downloader adapter instance.
 
 ---
 

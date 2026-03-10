@@ -38,6 +38,10 @@ def main():
     client = ClientOntology(cache_dir=cache_dir, downloader=downloader)
     client.load(source='go')  # catalog download
 
+    # Print roots of GO ontology
+    logger.info("Roots GO ontology: ")
+    logger.info(f"{client.get_root()}")
+
 if __name__ == '__main__':
 
     main()

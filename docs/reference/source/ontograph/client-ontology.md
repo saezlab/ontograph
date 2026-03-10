@@ -24,7 +24,9 @@ from ontograph.config.settings import DEFAULT_CACHE_DIR
 
 client_ontology = ClientOntology(cache_dir="./data/out")
 
-# Optional: use Download Manager for all remote downloads
+# Optional: use a backend string (client-level only)
+# client_ontology = ClientOntology(cache_dir="./data/out", downloader="pooch")
+# Or pass the adapter explicitly
 # downloader = DownloadManagerAdapter(cache_dir=DEFAULT_CACHE_DIR, backend="requests")
 # client_ontology = ClientOntology(cache_dir="./data/out", downloader=downloader)
 ```

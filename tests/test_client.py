@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+import ontograph.client as client_module
 
 from ontograph.client import ClientCatalog, ClientOntology
 from ontograph.models import Ontology, TermList
@@ -117,7 +118,7 @@ def test_get_download_url_and_formats(client_catalog):
 
 def test_client_ontology_load_from_file(client_ontology, dummy_ontology_path):
     # Should load ontology from file and initialize queries
-    ontology = client_ontology.load(source=str(dummy_ontology_path))
+    client_ontology.load(source=str(dummy_ontology_path))
     # The new load method does not return ontology, so check internal state
     assert isinstance(client_ontology._ontology, Ontology)
     # Should be able to access root term
@@ -187,3 +188,43 @@ def test_client_ontology_introspection_methods(
     assert isinstance(path, list)
     trajectories = client_ontology.get_trajectories_from_root('D')
     assert isinstance(trajectories, list)
+
+
+def test_client_catalog_downloader_string_uses_backend(tmp_path, monkeypatch):
+    class DummyDownloader:
+        pass
+
+    calls = {}
+
+    def fake_get_default(cache_dir, *, backend=None):
+        calls['cache_dir'] = cache_dir
+        calls['backend'] = backend
+        return DummyDownloader()
+
+    monkeypatch.setattr(
+        client_module, 'get_default_downloader', fake_get_default
+    )
+
+    client = ClientCatalog(cache_dir=tmp_path, downloader='download_manager')
+    assert isinstance(client._downloader, DummyDownloader)
+    assert calls['backend'] == 'download_manager'
+
+
+def test_client_ontology_downloader_string_uses_backend(tmp_path, monkeypatch):
+    class DummyDownloader:
+        pass
+
+    calls = {}
+
+    def fake_get_default(cache_dir, *, backend=None):
+        calls['cache_dir'] = cache_dir
+        calls['backend'] = backend
+        return DummyDownloader()
+
+    monkeypatch.setattr(
+        client_module, 'get_default_downloader', fake_get_default
+    )
+
+    client = ClientOntology(cache_dir=tmp_path, downloader='pooch')
+    assert isinstance(client._downloader, DummyDownloader)
+    assert calls['backend'] == 'pooch'

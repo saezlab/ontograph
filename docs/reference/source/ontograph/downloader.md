@@ -15,6 +15,10 @@ from ontograph.config.settings import DEFAULT_CACHE_DIR
 downloader = get_default_downloader(cache_dir=DEFAULT_CACHE_DIR)
 ```
 
+Note: String backends (e.g., `"pooch"`, `"download_manager"`) are accepted
+at the client layer (`ClientCatalog` / `ClientOntology`). Lower-level
+components expect a downloader adapter instance.
+
 ---
 
 ## API Reference

@@ -7,11 +7,12 @@ logging:
             filename: logs/app_go_logger.log
     loggers:
         default:
-            level: DEBUG
+            level: WARNING
+
+        # Logger configuration for each package
         pkg_infra:
             level: INFO
-            handlers: [file, console]
-            propagate: false
+
         download_manager:
             level: INFO
             handlers: [file, console]
@@ -30,6 +31,7 @@ integrations:  # New question: store the big yaml?
         settings:
         -   enabled: true # This will be switch <--- what should be the default value?
         -   cache_path: ontograph_config.yaml
+        -   downloader: download_manager
         -   source_ontology: chebi
         -   backend: graphblas
 

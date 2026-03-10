@@ -24,7 +24,9 @@ from ontograph.config.settings import DEFAULT_CACHE_DIR
 
 client_catalog = ClientCatalog(cache_dir="./data/out")
 
-# Optional: use Download Manager for all catalog downloads
+# Optional: use a backend string (client-level only)
+# client_catalog = ClientCatalog(cache_dir="./data/out", downloader="download_manager")
+# Or pass the adapter explicitly
 # downloader = DownloadManagerAdapter(cache_dir=DEFAULT_CACHE_DIR, backend="requests")
 # client_catalog = ClientCatalog(cache_dir="./data/out", downloader=downloader)
 ```
