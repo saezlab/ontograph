@@ -91,17 +91,23 @@ def get_default_downloader(
     from ontograph.config.settings import DEFAULT_DOWNLOADER
 
     selection = (backend or DEFAULT_DOWNLOADER).strip().lower()
-    logger.info('Selected default downloader backend: %s', selection)
+    logger.info(
+        'Downloader selected: %s (%s)',
+        selection,
+        'PoochDownloaderAdapter'
+        if selection == 'pooch'
+        else 'DownloadManagerAdapter',
+    )
     if selection == 'pooch':
         logger.debug(
-            'Instantiating downloader: %s (cache_dir=%s)',
+            'Downloader init: %s (cache_dir=%s)',
             PoochDownloaderAdapter.__name__,
             cache_dir,
         )
         return PoochDownloaderAdapter(cache_dir=cache_dir)
     if selection == 'download_manager':
         logger.debug(
-            'Instantiating downloader: %s (cache_dir=%s)',
+            'Downloader init: %s (cache_dir=%s)',
             DownloadManagerAdapter.__name__,
             cache_dir,
         )
@@ -156,17 +162,17 @@ class PoochDownloaderAdapter(DownloaderPort):
         """
         self._validate_download_parameters(url_ontology, filename)
 
-        logger.info('Pooch download started: %s -> %s', url_ontology, filename)
+        logger.info('Download start: %s -> %s', url_ontology, filename)
         try:
             result_path = self._perform_download(url_ontology, filename)
             self._resources_paths[filename.split('.')[0]] = result_path
-            logger.debug('Pooch download completed: %s', result_path)
+            logger.debug('Download success: %s', result_path)
             return result_path
         except requests.RequestException as e:
-            logger.error('Failed to download ontology: %s', e)
+            logger.error('Download failed: %s', e)
             raise
         except OSError as e:
-            logger.error('Failed to save downloaded ontology: %s', e)
+            logger.error('Download failed: %s', e)
             raise
 
     def _validate_download_parameters(
@@ -187,7 +193,7 @@ class PoochDownloaderAdapter(DownloaderPort):
             progressbar=True,
         )
         result_path = Path(resource_path)
-        logger.debug('Successfully downloaded ontology to %s', result_path)
+        logger.debug('Download success: %s', result_path)
         return result_path
 
     def fetch_from_catalog(
@@ -211,7 +217,7 @@ class PoochDownloaderAdapter(DownloaderPort):
         if not resources:
             raise ValueError('Resources list for batch download is empty.')
 
-        logger.debug('Fetching %s resources from catalog', len(resources))
+        logger.debug('Catalog batch download: %s items', len(resources))
         results = {}
         for resource in resources:
             name_id, format_type = self._extract_resource_info(resource)
@@ -316,16 +322,14 @@ class DownloadManagerAdapter(DownloaderPort):
         self._validate_download_parameters(url_ontology, filename)
 
         dest = self._cache_dir / filename
-        logger.info(
-            'DownloadManager download started: %s -> %s', url_ontology, dest
-        )
+        logger.info('Download start: %s -> %s', url_ontology, dest)
         result_path = self._manager.download(url_ontology, dest=str(dest))
         if not result_path:
             raise OSError('Download manager did not return a file path.')
 
         result = Path(result_path)
         self._resources_paths[dest.stem] = result
-        logger.debug('DownloadManager download completed: %s', result)
+        logger.debug('Download success: %s', result)
         return result
 
     def fetch_from_catalog(
@@ -349,7 +353,7 @@ class DownloadManagerAdapter(DownloaderPort):
         if not resources:
             raise ValueError('Resources list for batch download is empty.')
 
-        logger.debug('Fetching %s resources from catalog', len(resources))
+        logger.debug('Catalog batch download: %s items', len(resources))
         results = {}
         for resource in resources:
             name_id, format_type = self._extract_resource_info(resource)

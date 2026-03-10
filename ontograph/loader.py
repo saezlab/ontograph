@@ -413,10 +413,9 @@ class ProntoLoaderAdapter(OntologyLoaderPort):
         logger.debug(f'Created default downloader: {type(downloader).__name__}')
 
         logger.info(
-            'Downloading ontology %s.%s using %s (catalog)',
+            'Ontology download start: %s.%s (catalog)',
             name_id,
             format,
-            type(downloader).__name__,
         )
         resources = [{'name_id': name_id, 'format': format}]
         try:
@@ -520,11 +519,7 @@ class ProntoLoaderAdapter(OntologyLoaderPort):
             downloader = get_default_downloader(cache_dir=self.cache_dir)
         logger.debug(f'Created default downloader: {type(downloader).__name__}')
 
-        logger.info(
-            'Downloading ontology from URL using %s: %s',
-            type(downloader).__name__,
-            url_ontology,
-        )
+        logger.info('Ontology download start: %s (url)', url_ontology)
         file_path: Path = downloader.fetch_from_url(
             url_ontology=url_ontology,
             filename=filename,
