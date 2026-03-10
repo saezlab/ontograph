@@ -24,18 +24,18 @@ def main():
     logger.critical('This is a CRITICAL message')
 
     # Call a given downloader from OntoGraph
-    #downloader = PoochDownloaderAdapter(cache_dir=cache_dir)
-    downloader = DownloadManagerAdapter(cache_dir=cache_dir)
+    downloader = PoochDownloaderAdapter(cache_dir=cache_dir)
+    # downloader = DownloadManagerAdapter(cache_dir=cache_dir)
 
     # Download a catalog
-    catalog = ClientCatalog(cache_dir=cache_dir, downloader=downloader)
+    catalog = ClientCatalog(cache_dir=cache_dir, downloader=downloader) # using Pooch Adapter
     catalog.load_catalog()
 
     # print the schema tree
     #catalog.print_catalog_schema_tree()
 
     # Download a given ontology
-    client = ClientOntology(cache_dir=cache_dir, downloader=downloader)
+    client = ClientOntology(cache_dir=cache_dir, downloader="download_manager") # using string 
     client.load(source='go')  # catalog download
 
     # Print roots of GO ontology
