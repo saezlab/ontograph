@@ -6,6 +6,11 @@
 build-backend = "hatchling.build"
 requires = ["hatchling"]
 
+[dependency-groups]
+dev = [
+    "saezlab-core"
+]
+
 # ===================================
 # =======       PROJECT      ========
 # ===================================
@@ -33,7 +38,7 @@ dependencies = [
     "pyyaml",
     "appdirs>=1.4.4",
     "python-graphblas[default]>=2025.2.0",
-    "download-manager",
+    "download-manager"
 ]
 description = "A lightweight Python package for loading, representing, and efficiently querying biological ontologies as graph structures."
 license = "MIT"
@@ -147,6 +152,9 @@ report_level = "INFO"
 
 # ---- Ruff: a fast Python linter and formatter.
 [tool.ruff]
+exclude = [
+    "sandbox/"
+]
 extend-include = ["*.ipynb"]
 line-length = 80
 target-version = "py312"
@@ -345,12 +353,7 @@ python = [
 ]
 
 [tool.uv.sources]
+download-manager = {git = "https://github.com/saezlab/download-manager.git", rev = "/fix/cache-manager-numpy"}
 jupyter-contrib-nbextensions = {git = "https://github.com/deeenes/jupyter_contrib_nbextensions.git", branch = "master"}
 nbsphinx = {git = "https://github.com/deeenes/nbsphinx", branch = "timings"}
-saezlab-core = { git = "https://github.com/saezlab/saezlab_core.git", rev = "feat/mvp" }
-download-manager = { git = "https://github.com/saezlab/download-manager.git", rev = "/fix/cache-manager-numpy" }
-
-[dependency-groups]
-dev = [
-    "saezlab-core",
-]
+saezlab-core = {git = "https://github.com/saezlab/saezlab_core.git", rev = "feat/mvp"}
