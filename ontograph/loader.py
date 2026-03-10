@@ -410,9 +410,7 @@ class ProntoLoaderAdapter(OntologyLoaderPort):
             downloader = self._downloader
         if downloader is None:
             downloader = get_default_downloader(cache_dir=self.cache_dir)
-            logger.debug(
-                f'Created default downloader: {type(downloader).__name__}'
-            )
+        logger.debug(f'Created default downloader: {type(downloader).__name__}')
 
         logger.info(
             'Downloading ontology %s.%s using %s (catalog)',
@@ -520,9 +518,7 @@ class ProntoLoaderAdapter(OntologyLoaderPort):
             downloader = self._downloader
         if downloader is None:
             downloader = get_default_downloader(cache_dir=self.cache_dir)
-            logger.debug(
-                f'Created default downloader: {type(downloader).__name__}'
-            )
+        logger.debug(f'Created default downloader: {type(downloader).__name__}')
 
         logger.info(
             'Downloading ontology from URL using %s: %s',

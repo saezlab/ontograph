@@ -33,7 +33,7 @@ from ontograph.models import (
     NodesDataframe,
     CatalogOntologies,
 )
-from ontograph.downloader import DownloaderPort
+from ontograph.downloader import DownloaderPort, get_default_downloader
 from ontograph.config.settings import DEFAULT_CACHE_DIR
 from ontograph.queries.navigator import (
     NavigatorPronto,
@@ -58,6 +58,16 @@ __all__ = [
 ]
 
 
+def _resolve_downloader(
+    cache_dir: Path, downloader: DownloaderPort | str | None
+) -> DownloaderPort:
+    if isinstance(downloader, str):
+        return get_default_downloader(cache_dir=cache_dir, backend=downloader)
+    if downloader is None:
+        return get_default_downloader(cache_dir=cache_dir, backend='pooch')
+    return downloader
+
+
 # --------------------------------------------- #
 # ----          Client for Catalog          --- #
 # --------------------------------------------- #
@@ -76,19 +86,22 @@ class ClientCatalog:
     def __init__(
         self,
         cache_dir: str = DEFAULT_CACHE_DIR,
-        downloader: DownloaderPort | None = None,
+        downloader: DownloaderPort | str | None = None,
     ) -> None:
         """Initialize the ClientCatalog.
 
         Args:
             cache_dir (str, optional): Directory for caching catalog data. Defaults to DEFAULT_CACHE_DIR.
-            downloader (DownloaderPort | None, optional): Downloader adapter for remote resources. Defaults to None.
+            downloader (DownloaderPort | str | None, optional): Downloader adapter or backend name
+                ('pooch' or 'download_manager'). Defaults to 'pooch'.
         """
+        cache_path = Path(cache_dir)
+        resolved_downloader = _resolve_downloader(cache_path, downloader)
         self.__catalog_adapter = CatalogOntologies(
-            cache_dir=Path(cache_dir),
-            downloader=downloader,
+            cache_dir=cache_path,
+            downloader=resolved_downloader,
         )
-        self._downloader = downloader
+        self._downloader = resolved_downloader
 
     def load_catalog(self, force_download: bool = False) -> None:
         """Load the ontology catalog.
@@ -231,17 +244,18 @@ class ClientOntology:
     def __init__(
         self,
         cache_dir: str = DEFAULT_CACHE_DIR,
-        downloader: DownloaderPort | None = None,
+        downloader: DownloaderPort | str | None = None,
     ) -> None:
         """Initialize the ClientOntology.
 
         Args:
             cache_dir (str, optional): Directory for caching ontology data. Defaults to DEFAULT_CACHE_DIR.
-            downloader (DownloaderPort | None, optional): Downloader adapter for remote resources. Defaults to None.
+            downloader (DownloaderPort | str | None, optional): Downloader adapter or backend name
+                ('pooch' or 'download_manager'). Defaults to 'pooch'.
         """
         self._cache_dir = Path(cache_dir)
+        self._downloader = _resolve_downloader(self._cache_dir, downloader)
         self._ontology = None
-        self._downloader = downloader
         self._lookup_tables = None
         self._navigator = None
         self._relations = None
@@ -331,7 +345,7 @@ class ClientOntology:
     def load(
         self,
         source: str,
-        downloader: DownloaderPort = None,
+        downloader: DownloaderPort | str | None = None,
         include_obsolete: bool = False,
         backend: str = 'pronto',
     ) -> None:
@@ -346,7 +360,8 @@ class ClientOntology:
 
         Args:
             source (str): Path to the ontology file, URL, or OBO Foundry identifier.
-            downloader (DownloaderPort, optional): Downloader adapter for remote files. Defaults to None.
+            downloader (DownloaderPort | str | None, optional): Downloader adapter or backend name
+                ('pooch' or 'download_manager'). Defaults to None.
             include_obsolete (bool, optional): If True, include obsolete terms when building GraphBLAS structures. Defaults to False.
             backend (str, optional): Backend for queries ('pronto' or 'graphblas'). Defaults to 'pronto'.
 
@@ -362,12 +377,19 @@ class ClientOntology:
             >>> client.load(source="./tests/resources/dummy_ontology.obo")
         """
         logger.info(f'Loading ontology from source: {source} ...')
+        resolved_downloader = (
+            _resolve_downloader(self._cache_dir, downloader)
+            if downloader is not None
+            else self._downloader
+        )
         logger.debug(
             'Using downloader: %s',
-            type(downloader).__name__ if downloader else 'default',
+            type(resolved_downloader).__name__
+            if resolved_downloader
+            else 'default',
         )
         loader = ProntoLoaderAdapter(
-            cache_dir=self._cache_dir, downloader=self._downloader
+            cache_dir=self._cache_dir, downloader=resolved_downloader
         )
 
         path = Path(source)
@@ -388,14 +410,16 @@ class ClientOntology:
                 f'Detected URL source, downloading ontology from {source}'
             )
             filename = Path(source).name or 'ontology.obo'
-            ontology = loader.load_from_url(source, filename, downloader)
+            ontology = loader.load_from_url(
+                source, filename, resolved_downloader
+            )
 
         # 3. Case 3: Try OBO catalog (if file missing or simple ID)
         else:
             logger.debug('Resolved source type: catalog')
             catalog_client = ClientCatalog(
                 cache_dir=self._cache_dir,
-                downloader=self._downloader,
+                downloader=resolved_downloader,
             )
             catalog_client.load_catalog()
             available = [
@@ -410,7 +434,7 @@ class ClientOntology:
                 ontology = loader.load_from_catalog(
                     name_id=name_id,
                     format='obo',
-                    downloader=self._downloader,
+                    downloader=resolved_downloader,
                 )
             else:
                 msg = f"Ontology '{source}' not found as file, URL, or catalog entry."
