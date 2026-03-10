@@ -5,7 +5,12 @@ import pytest
 import requests
 import responses
 
-from ontograph.downloader import DownloaderPort, PoochDownloaderAdapter
+from ontograph.downloader import (
+    DownloaderPort,
+    PoochDownloaderAdapter,
+    get_default_downloader,
+)
+from ontograph.config import settings
 
 __all__ = [
     'MockCatalog',
@@ -55,6 +60,36 @@ class TestDownloaderPort:
             [{'name_id': 'test'}], None
         )
         assert isinstance(catalog_results, dict)
+
+
+def test_get_default_downloader_pooch(tmp_path, monkeypatch):
+    monkeypatch.setattr(settings, 'DEFAULT_DOWNLOADER', 'pooch')
+    downloader = get_default_downloader(cache_dir=tmp_path)
+    assert isinstance(downloader, PoochDownloaderAdapter)
+
+
+def test_get_default_downloader_download_manager(tmp_path, monkeypatch):
+    class DummyDownloadManagerAdapter:
+        def __init__(self, cache_dir):
+            self.cache_dir = cache_dir
+
+    import ontograph.downloader as downloader_module
+
+    monkeypatch.setattr(settings, 'DEFAULT_DOWNLOADER', 'download_manager')
+    monkeypatch.setattr(
+        downloader_module,
+        'DownloadManagerAdapter',
+        DummyDownloadManagerAdapter,
+    )
+    downloader = get_default_downloader(cache_dir=tmp_path)
+    assert isinstance(downloader, DummyDownloadManagerAdapter)
+    assert downloader.cache_dir == tmp_path
+
+
+def test_get_default_downloader_invalid_backend(tmp_path, monkeypatch):
+    monkeypatch.setattr(settings, 'DEFAULT_DOWNLOADER', 'invalid')
+    with pytest.raises(ValueError):
+        get_default_downloader(cache_dir=tmp_path)
 
 
 class MockCatalog:
