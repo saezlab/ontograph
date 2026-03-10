@@ -2,30 +2,49 @@
 # ----      Logging               -----
 # -------------------------------------
 logging:
-  handlers:
-    file:
-      filename: "logs/my_saezapp_logger.log"
+    handlers:
+        file:
+            filename: logs/my_saezapp_logger.log
+
+    loggers:
+        default:
+            level: DEBUG
+        pkg_infra:
+            level: INFO
+            handlers: [file, console]
+            propagate: false
+        download_manager:
+            level: INFO
+            handlers: [file, console]
+            propagate: false
+        ontograph:
+            level: INFO
+            handlers: [file, console]
+            propagate: false
+
+    root:
+        level: WARNING
+        handlers: [file, console]
 
 # -------------------------------------
 # ----      Integrations          -----
 # -------------------------------------
 integrations:  # New question: store the big yaml?
   # OntoGraph
-  ontograph:
-    settings:
-      - enabled: true  # This will be switch <--- what should be the default value?
-      - cache_path: "ontograph_config.yaml"
-      - source_ontology: "chebi"
-      - backend: "graphblas"
+    ontograph:
+        settings:
+        -   enabled: true # This will be switch <--- what should be the default value?
+        -   cache_path: ontograph_config.yaml
+        -   source_ontology: chebi
+        -   backend: graphblas
 
   # Download manager
-  download_manager:
-    settings:
-      enabled: true   # This will be switch <--- what should be the default value?
-      path: "/tmp"
-      backend: "requests"
-      
-      url: "https://getsamplefiles.com/download/txt/sample-1.txt"
-      dest: false
-      newer_than: null
-      older_than: null
+    download_manager:
+        settings:
+            enabled: true # This will be switch <--- what should be the default value?
+            path: /tmp
+            backend: requests
+            url: https://getsamplefiles.com/download/txt/sample-1.txt
+            dest: false
+            newer_than:
+            older_than:
