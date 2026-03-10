@@ -24,7 +24,7 @@
   Analyze ontology structure, calculate paths and trajectories, and visualize term hierarchies.
 
 - **Caching & Download Management**  
-  Efficiently download and cache ontology files for offline use.
+  Efficiently download and cache ontology files for offline use with configurable downloader backends.
 
 ---
 

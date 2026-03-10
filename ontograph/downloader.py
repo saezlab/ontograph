@@ -5,14 +5,17 @@ downloading ontology resources from both direct URLs and ontology catalogs.
 """
 
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
 import logging
 from pathlib import Path
 
 from pooch import retrieve
 import requests
 
-from ontograph.models import CatalogOntologies
 from ontograph.config.settings import DEFAULT_FORMAT_ONTOLOGY
+
+if TYPE_CHECKING:
+    from ontograph.models import CatalogOntologies
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
@@ -22,6 +25,7 @@ __all__ = [
     'DownloadManagerAdapter',
     'DownloaderPort',
     'PoochDownloaderAdapter',
+    'get_default_downloader',
 ]
 
 
@@ -55,7 +59,9 @@ class DownloaderPort(ABC):
 
     @abstractmethod
     def fetch_from_catalog(
-        self, resources: list[dict[str, str]], catalog: CatalogOntologies
+        self,
+        resources: list[dict[str, str]],
+        catalog: 'CatalogOntologies',
     ) -> dict[str, Path]:
         """Download multiple ontology files defined in a catalog.
 
@@ -71,6 +77,39 @@ class DownloaderPort(ABC):
             KeyError: If a resource is missing required fields
         """
         pass
+
+
+def get_default_downloader(
+    cache_dir: Path, *, backend: str | None = None
+) -> DownloaderPort:
+    """Return the default downloader adapter.
+
+    Args:
+        cache_dir: Directory to store downloaded files.
+        backend: Override the configured default ('pooch' or 'download_manager').
+    """
+    from ontograph.config.settings import DEFAULT_DOWNLOADER
+
+    selection = (backend or DEFAULT_DOWNLOADER).strip().lower()
+    logger.info('Selected default downloader backend: %s', selection)
+    if selection == 'pooch':
+        logger.debug(
+            'Instantiating downloader: %s (cache_dir=%s)',
+            PoochDownloaderAdapter.__name__,
+            cache_dir,
+        )
+        return PoochDownloaderAdapter(cache_dir=cache_dir)
+    if selection == 'download_manager':
+        logger.debug(
+            'Instantiating downloader: %s (cache_dir=%s)',
+            DownloadManagerAdapter.__name__,
+            cache_dir,
+        )
+        return DownloadManagerAdapter(cache_dir=cache_dir)
+
+    raise ValueError(
+        "Unknown downloader backend. Use 'pooch' or 'download_manager'."
+    )
 
 
 # ----------------------------------------------------------------------
@@ -117,16 +156,17 @@ class PoochDownloaderAdapter(DownloaderPort):
         """
         self._validate_download_parameters(url_ontology, filename)
 
-        logging.info(f'Downloading ontology from {url_ontology} as {filename}')
+        logger.info('Pooch download started: %s -> %s', url_ontology, filename)
         try:
             result_path = self._perform_download(url_ontology, filename)
             self._resources_paths[filename.split('.')[0]] = result_path
+            logger.debug('Pooch download completed: %s', result_path)
             return result_path
         except requests.RequestException as e:
-            logging.error(f'Failed to download ontology: {e}')
+            logger.error('Failed to download ontology: %s', e)
             raise
         except OSError as e:
-            logging.error(f'Failed to save downloaded ontology: {e}')
+            logger.error('Failed to save downloaded ontology: %s', e)
             raise
 
     def _validate_download_parameters(
@@ -147,11 +187,13 @@ class PoochDownloaderAdapter(DownloaderPort):
             progressbar=True,
         )
         result_path = Path(resource_path)
-        logging.info(f'Successfully downloaded ontology to {result_path}')
+        logger.debug('Successfully downloaded ontology to %s', result_path)
         return result_path
 
     def fetch_from_catalog(
-        self, resources: list[dict[str, str]], catalog: CatalogOntologies
+        self,
+        resources: list[dict[str, str]],
+        catalog: 'CatalogOntologies',
     ) -> dict[str, Path]:
         """Download multiple ontology files defined in a catalog.
 
@@ -169,6 +211,7 @@ class PoochDownloaderAdapter(DownloaderPort):
         if not resources:
             raise ValueError('Resources list for batch download is empty.')
 
+        logger.debug('Fetching %s resources from catalog', len(resources))
         results = {}
         for resource in resources:
             name_id, format_type = self._extract_resource_info(resource)
@@ -196,7 +239,7 @@ class PoochDownloaderAdapter(DownloaderPort):
         return name_id, format_type
 
     def _get_resource_url(
-        self, name_id: str, format_type: str, catalog: CatalogOntologies
+        self, name_id: str, format_type: str, catalog: 'CatalogOntologies'
     ) -> str:
         url = catalog.get_download_url(name_id, format_type)
         if not url:
@@ -213,8 +256,142 @@ class PoochDownloaderAdapter(DownloaderPort):
 class DownloadManagerAdapter(DownloaderPort):
     """Alternative downloader implementation.
 
-    Placeholder class for a implement the adapter using the
-    `downloader-manager` by Saezlab.
+    Adapter for the `download_manager` package by Saezlab.
     """
 
-    pass
+    def __init__(
+        self,
+        cache_dir: Path,
+        *,
+        backend: str = 'requests',
+        **kwargs: object,
+    ) -> None:
+        """Initialize the download-manager adapter.
+
+        Args:
+            cache_dir: Directory to store downloaded files.
+            backend: Backend for download_manager ('requests' or 'curl').
+            **kwargs: Extra keyword args forwarded to DownloadManager.
+        """
+        try:
+            import download_manager as dm
+        except ModuleNotFoundError as exc:
+            raise ModuleNotFoundError(
+                'download_manager is not installed. '
+                'Install it to use DownloadManagerAdapter.'
+            ) from exc
+
+        self._cache_dir = cache_dir
+        self._cache_dir.mkdir(parents=True, exist_ok=True)
+        self._manager = dm.DownloadManager(
+            path=str(self._cache_dir),
+            backend=backend,
+            **kwargs,
+        )
+        self._resources_paths: dict[str, Path] = {}
+
+    def get_paths(self) -> dict[str, Path]:
+        """Get paths of all downloaded resources.
+
+        Returns:
+            dict[str, Path]: dictionary mapping resource IDs to file paths
+        """
+        return self._resources_paths
+
+    def fetch_from_url(self, url_ontology: str, filename: str | None) -> Path:
+        """Download an ontology file from a specified URL.
+
+        Args:
+            url_ontology: URL pointing to the ontology file
+            filename: Name to save the file as
+
+        Returns:
+            Path: Path to the downloaded file
+
+        Raises:
+            ValueError: If the URL or filename is empty
+            RequestException: If the download fails
+            IOError: If saving the file fails
+        """
+        self._validate_download_parameters(url_ontology, filename)
+
+        dest = self._cache_dir / filename
+        logger.info(
+            'DownloadManager download started: %s -> %s', url_ontology, dest
+        )
+        result_path = self._manager.download(url_ontology, dest=str(dest))
+        if not result_path:
+            raise OSError('Download manager did not return a file path.')
+
+        result = Path(result_path)
+        self._resources_paths[dest.stem] = result
+        logger.debug('DownloadManager download completed: %s', result)
+        return result
+
+    def fetch_from_catalog(
+        self,
+        resources: list[dict[str, str]],
+        catalog: 'CatalogOntologies',
+    ) -> dict[str, Path]:
+        """Download multiple ontology files defined in a catalog.
+
+        Args:
+            resources: list of dictionaries with resource information
+            catalog: Catalog object containing download URLs
+
+        Returns:
+            dict[str, Path]: dictionary mapping resource IDs to file paths
+
+        Raises:
+            ValueError: If the resources list is empty or URL not found
+            KeyError: If a resource is missing required fields
+        """
+        if not resources:
+            raise ValueError('Resources list for batch download is empty.')
+
+        logger.debug('Fetching %s resources from catalog', len(resources))
+        results = {}
+        for resource in resources:
+            name_id, format_type = self._extract_resource_info(resource)
+            url = self._get_resource_url(name_id, format_type, catalog)
+
+            filename = f'{name_id}.{format_type}'
+            local_path = self.fetch_from_url(
+                url_ontology=url, filename=filename
+            )
+            results[name_id] = local_path
+
+        self._resources_paths.update(results)
+        return results
+
+    def _validate_download_parameters(
+        self, url_ontology: str, filename: str | None
+    ) -> None:
+        if not url_ontology or not url_ontology.strip():
+            raise ValueError('URL cannot be empty')
+
+        if not filename or not filename.strip():
+            raise ValueError('Filename cannot be empty')
+
+    def _extract_resource_info(
+        self, resource: dict[str, str]
+    ) -> tuple[str, str]:
+        name_id = resource.get('name_id')
+        if not name_id:
+            raise KeyError("Resource dictionary must contain 'name_id' key")
+
+        format_type = resource.get(
+            'format', DEFAULT_FORMAT_ONTOLOGY
+        )  # Default to OBO format
+        return name_id, format_type
+
+    def _get_resource_url(
+        self, name_id: str, format_type: str, catalog: 'CatalogOntologies'
+    ) -> str:
+        url = catalog.get_download_url(name_id, format_type)
+        if not url:
+            raise ValueError(
+                f'Cannot find download URL for ontology {name_id} '
+                f'in format {format_type}'
+            )
+        return url

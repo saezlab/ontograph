@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 
+import ontograph.loader as loader_module
 from ontograph.loader import (
     OntologyLoaderPort,
     ProntoLoaderAdapter,
@@ -88,6 +89,27 @@ def test_load_from_catalog_file_not_found(pronto_loader, monkeypatch):
         pronto_loader.load_from_catalog('ado', format='obo')
 
 
+def test_download_ontology_uses_default_downloader(
+    pronto_loader, tmp_path, monkeypatch
+):
+    class DummyDownloader:
+        def fetch_from_catalog(self, resources, catalog):
+            return {'ado': tmp_path / 'ado.obo'}
+
+    calls = {'count': 0}
+
+    def fake_get_default(cache_dir):
+        calls['count'] += 1
+        return DummyDownloader()
+
+    monkeypatch.setattr(
+        loader_module, 'get_default_downloader', fake_get_default
+    )
+    path = pronto_loader._download_ontology('ado', 'obo')
+    assert calls['count'] == 1
+    assert path == tmp_path / 'ado.obo'
+
+
 def test_load_from_catalog_metadata_missing(
     pronto_loader, monkeypatch, tmp_path
 ):
@@ -172,12 +194,10 @@ def test_download_ontology_not_implemented(pronto_loader, monkeypatch):
         def fetch_from_catalog(self, resources, catalog):
             raise Exception('fail')
 
-    monkeypatch.setattr(
-        'ontograph.loader.PoochDownloaderAdapter',
-        lambda cache_dir: DummyDownloader(),
-    )
     with pytest.raises(RuntimeError):
-        pronto_loader._download_ontology('ado', 'obo')
+        pronto_loader._download_ontology(
+            'ado', 'obo', downloader=DummyDownloader()
+        )
 
 
 def test_cache_dir_property_value_error():

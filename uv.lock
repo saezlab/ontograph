@@ -108,7 +108,7 @@ wheels = [
 [[package]]
 name = "cachemanager"
 version = "0.1.1"
-source = { git = "https://github.com/saezlab/cache-manager.git?rev=fix%2Fnumpy-dependency-version#a48300c9d9536ce0a6adcb7f35a8057120ca266d" }
+source = { git = "https://github.com/saezlab/cache-manager.git?rev=main#48a83eb03e9bb5b790dbcc7c23e1c71c2477fb23" }
 dependencies = [
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "numpy", version = "2.3.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
@@ -510,13 +510,14 @@ wheels = [
 [[package]]
 name = "download-manager"
 version = "0.0.1"
-source = { git = "https://github.com/saezlab/download-manager.git?rev=%2Ffix%2Fcache-manager-numpy#a5013789f66c1bf47ff1a5c63f6d5e15ffca0362" }
+source = { git = "https://github.com/saezlab/download-manager.git?rev=feat%2Fmigration-logger#1a12ad05a04f1f83097412bb1d13b5e014e9361d" }
 dependencies = [
     { name = "cachemanager" },
     { name = "certifi" },
     { name = "pycurl" },
     { name = "requests" },
     { name = "toml" },
+    { name = "tqdm" },
 ]
 
 [[package]]
@@ -1522,7 +1523,7 @@ tests = [
 
 [package.dev-dependencies]
 dev = [
-    { name = "saezlab-core" },
+    { name = "pkg-infra" },
 ]
 
 [package.metadata]
@@ -1534,7 +1535,7 @@ requires-dist = [
     { name = "coverage", marker = "extra == 'tests'", specifier = ">=6.0" },
     { name = "diff-cover", marker = "extra == 'tests'" },
     { name = "distlib", marker = "extra == 'dev'" },
-    { name = "download-manager", git = "https://github.com/saezlab/download-manager.git?rev=%2Ffix%2Fcache-manager-numpy" },
+    { name = "download-manager", git = "https://github.com/saezlab/download-manager.git?rev=feat%2Fmigration-logger" },
     { name = "ipykernel", marker = "extra == 'dev'" },
     { name = "mkdocs-material", marker = "extra == 'docs'", specifier = ">=9.6.14" },
     { name = "mkdocstrings", extras = ["python"], marker = "extra == 'docs'", specifier = ">=0.29.1,<0.30" },
@@ -1555,7 +1556,7 @@ requires-dist = [
 provides-extras = ["dev", "docs", "security", "semantic", "tests"]
 
 [package.metadata.requires-dev]
-dev = [{ name = "saezlab-core", git = "https://github.com/saezlab/saezlab_core.git?rev=feat%2Fmvp" }]
+dev = [{ name = "pkg-infra", git = "https://github.com/saezlab/pkg_infra.git?rev=main" }]
 
 [[package]]
 name = "packaging"
@@ -1677,6 +1678,22 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/42/92/cc564bf6381ff43ce1f4d06852fc19a2f11d180f23dc32d9588bee2f149d/pexpect-4.9.0.tar.gz", hash = "sha256:ee7d41123f3c9911050ea2c2dac107568dc43b2d3b0c7557a33212c398ead30f", size = 166450, upload-time = "2023-11-25T09:07:26.339Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/9e/c3/059298687310d527a58bb01f3b1965787ee3b40dce76752eda8b44e9a2c5/pexpect-4.9.0-py2.py3-none-any.whl", hash = "sha256:7236d1e080e4936be2dc3e326cec0af72acf9212a7e1d060210e70a47e253523", size = 63772, upload-time = "2023-11-25T06:56:14.81Z" },
+]
+
+[[package]]
+name = "pkg-infra"
+version = "0.0.1"
+source = { git = "https://github.com/saezlab/pkg_infra.git?rev=main#966990b5e4f2a76edccfc84a2c553c057289ad09" }
+dependencies = [
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "numpy", version = "2.3.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "omegaconf" },
+    { name = "pandas" },
+    { name = "platformdirs" },
+    { name = "pydantic" },
+    { name = "python-json-logger" },
+    { name = "pyyaml" },
+    { name = "toml" },
 ]
 
 [[package]]
@@ -2401,22 +2418,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/fe/84/7cc7bd73924ee6be4724be0db5414a4a2ed82d06b30827342315a1be9e9c/ruff-0.12.3-py3-none-win32.whl", hash = "sha256:dfd45e6e926deb6409d0616078a666ebce93e55e07f0fb0228d4b2608b2c248d", size = 10589263, upload-time = "2025-07-11T13:21:07.148Z" },
     { url = "https://files.pythonhosted.org/packages/07/87/c070f5f027bd81f3efee7d14cb4d84067ecf67a3a8efb43aadfc72aa79a6/ruff-0.12.3-py3-none-win_amd64.whl", hash = "sha256:a946cf1e7ba3209bdef039eb97647f1c77f6f540e5845ec9c114d3af8df873e7", size = 11695072, upload-time = "2025-07-11T13:21:11.004Z" },
     { url = "https://files.pythonhosted.org/packages/e0/30/f3eaf6563c637b6e66238ed6535f6775480db973c836336e4122161986fc/ruff-0.12.3-py3-none-win_arm64.whl", hash = "sha256:5f9c7c9c8f84c2d7f27e93674d27136fbf489720251544c4da7fb3d742e011b1", size = 10805855, upload-time = "2025-07-11T13:21:13.547Z" },
-]
-
-[[package]]
-name = "saezlab-core"
-version = "0.0.1"
-source = { git = "https://github.com/saezlab/saezlab_core.git?rev=feat%2Fmvp#778b74902c753e4163ed3910882b4dab9de8b183" }
-dependencies = [
-    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "numpy", version = "2.3.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-    { name = "omegaconf" },
-    { name = "pandas" },
-    { name = "platformdirs" },
-    { name = "pydantic" },
-    { name = "python-json-logger" },
-    { name = "pyyaml" },
-    { name = "toml" },
 ]
 
 [[package]]

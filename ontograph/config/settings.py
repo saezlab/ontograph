@@ -11,6 +11,7 @@ __all__ = [
     'PACKAGE_VERSION',
     'SUPPORTED_FORMATS_ONTOGRAPH',
     'DEFAULT_FORMAT_ONTOLOGY',
+    'DEFAULT_DOWNLOADER',
 ]
 
 # Package metadata from installed package
@@ -30,5 +31,8 @@ OBO_FOUNDRY_REGISTRY_URL = 'http://obofoundry.org/registry/ontologies.yml'
 # List of supported formats in OntoGraph
 SUPPORTED_FORMATS_ONTOGRAPH = ['obo', 'owl']
 DEFAULT_FORMAT_ONTOLOGY = 'obo'
+
+# Default downloader backend for remote resources ('pooch' or 'download_manager')
+DEFAULT_DOWNLOADER = 'pooch'
 
 # TODO: Ready for improvement
