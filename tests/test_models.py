@@ -4,6 +4,7 @@ from ontograph.models import (
     Ontology,
     CatalogOntologies,
 )
+import ontograph.models as models_module
 
 
 @pytest.fixture
@@ -109,6 +110,39 @@ def test_print_catalog_schema_tree(catalogontologies, capsys):
     catalogontologies.print_catalog_schema_tree()
     out, _ = capsys.readouterr()
     assert 'OBO Foundry Registry Schema Structure' in out
+
+
+def test_load_catalog_uses_default_downloader(tmp_path, monkeypatch):
+    catalog_file = tmp_path / 'registry.yml'
+    catalog_data = {'ontologies': []}
+
+    def write_catalog():
+        import yaml
+
+        with open(catalog_file, 'w') as f:
+            yaml.safe_dump(catalog_data, f)
+
+    class DummyDownloader:
+        def fetch_from_url(self, url_ontology, filename):
+            write_catalog()
+            return catalog_file
+
+    calls = {'count': 0}
+
+    def fake_get_default(cache_dir):
+        calls['count'] += 1
+        return DummyDownloader()
+
+    monkeypatch.setattr(
+        models_module, 'NAME_OBO_FOUNDRY_CATALOG', catalog_file.name
+    )
+    monkeypatch.setattr(
+        models_module, 'get_default_downloader', fake_get_default
+    )
+
+    obo_reg = CatalogOntologies(cache_dir=tmp_path)
+    obo_reg.load_catalog(force_download=True)
+    assert calls['count'] == 1
 
 
 def test_ontology_model():

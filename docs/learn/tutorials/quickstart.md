@@ -11,12 +11,18 @@ First, let's interact with the OBO Foundry catalog to discover available ontolog
 
 ```python
 from ontograph.client import ClientCatalog
+from ontograph.downloader import DownloadManagerAdapter
+from ontograph.config.settings import DEFAULT_CACHE_DIR
 
 # Create a catalog client (specify a cache directory for downloads)
 client_catalog = ClientCatalog(cache_dir="./data/out")
 
 # Load the catalog (downloads if not cached)
 client_catalog.load_catalog()
+
+# Optional: choose a downloader adapter explicitly
+# downloader = DownloadManagerAdapter(cache_dir=DEFAULT_CACHE_DIR, backend="requests")
+# client_catalog = ClientCatalog(cache_dir="./data/out", downloader=downloader)
 ```
 
 ### List Available Ontologies
@@ -48,12 +54,18 @@ Now, let's load an ontology and explore its structure.
 
 ```python
 from ontograph.client import ClientOntology
+from ontograph.downloader import DownloadManagerAdapter
+from ontograph.config.settings import DEFAULT_CACHE_DIR
 
 # Create an ontology client
 client_ontology = ClientOntology(cache_dir="./data/out")
 
 # Load a sample ontology (provided in the repo for testing)
-client_ontology.load(file_path_ontology="./tests/resources/dummy_ontology.obo")
+client_ontology.load(source="./tests/resources/dummy_ontology.obo")
+
+# Optional: choose a downloader adapter explicitly
+# downloader = DownloadManagerAdapter(cache_dir=DEFAULT_CACHE_DIR, backend="requests")
+# client_ontology = ClientOntology(cache_dir="./data/out", downloader=downloader)
 ```
 
 ---

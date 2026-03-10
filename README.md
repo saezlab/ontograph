@@ -30,9 +30,15 @@ uv pip install -e .
 
 ```python
 from ontograph.client import ClientCatalog
+from ontograph.downloader import DownloadManagerAdapter
+from ontograph.config.settings import DEFAULT_CACHE_DIR
 
 # Instantiate a client for your catalog
 client_catalog = ClientCatalog(cache_dir="./data/out")
+
+# Optional: choose a downloader adapter explicitly
+# downloader = DownloadManagerAdapter(cache_dir=DEFAULT_CACHE_DIR, backend="requests")
+# client_catalog = ClientCatalog(cache_dir="./data/out", downloader=downloader)
 
 # Load the catalog, in case this one doesn't exist it will be downloaded automatically in the cache folder you specify.
 client_catalog.load_catalog()
@@ -56,12 +62,18 @@ metadata_go = client_catalog.get_ontology_metadata(ontology_id="go", show_metada
 #### Create a client for your ontology
 ```python
 from ontograph.client import ClientOntology
+from ontograph.downloader import DownloadManagerAdapter
+from ontograph.config.settings import DEFAULT_CACHE_DIR
 
 # Instantiate a client for your ontology
 client_dummy_ontology = ClientOntology(cache_dir="./data/out")
 
 # Load a dummy ontology, we prepare a simple one to try out this package.
-client_dummy_ontology.load(file_path_ontology="./tests/resources/dummy_ontology.obo")
+client_dummy_ontology.load(source="./tests/resources/dummy_ontology.obo")
+
+# Optional: choose a downloader adapter explicitly
+# downloader = DownloadManagerAdapter(cache_dir=DEFAULT_CACHE_DIR, backend="requests")
+# client_dummy_ontology = ClientOntology(cache_dir="./data/out", downloader=downloader)
 ```
 #### Queries for your ontology
 
@@ -138,7 +150,17 @@ If you are interested in loading an ontology from the catalog, just use the `nam
 
 ```bash
 client_go = ClientOntology()
-client_go.load(name_id="go", format="obo")
+client_go.load(source="go")
+```
+
+### Downloader configuration
+
+By default, the project uses a configurable downloader backend. You can set a global default in `ontograph/config/settings.py`:
+
+```python
+DEFAULT_DOWNLOADER = "pooch"
+# or
+DEFAULT_DOWNLOADER = "download_manager"
 ```
 
 ## Contributing
