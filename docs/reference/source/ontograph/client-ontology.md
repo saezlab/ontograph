@@ -15,6 +15,20 @@ This class is ideal for users who want to work directly with a specific ontology
 - Introspect ontology structure: calculate paths, trajectories, and visualize term hierarchies
 - Modular query adapters for navigation, relations, and introspection
 
+## Usage
+
+```python
+from ontograph.client import ClientOntology
+from ontograph.downloader import DownloadManagerAdapter
+from ontograph.config.settings import DEFAULT_CACHE_DIR
+
+client_ontology = ClientOntology(cache_dir="./data/out")
+
+# Optional: use Download Manager for all remote downloads
+# downloader = DownloadManagerAdapter(cache_dir=DEFAULT_CACHE_DIR, backend="requests")
+# client_ontology = ClientOntology(cache_dir="./data/out", downloader=downloader)
+```
+
 ---
 
 ## API Reference

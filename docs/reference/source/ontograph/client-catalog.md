@@ -15,6 +15,20 @@ This class is ideal for users who want to explore the catalog of available ontol
 - Get download URLs and available formats for each ontology
 - Print the catalog schema tree for exploration
 
+## Usage
+
+```python
+from ontograph.client import ClientCatalog
+from ontograph.downloader import DownloadManagerAdapter
+from ontograph.config.settings import DEFAULT_CACHE_DIR
+
+client_catalog = ClientCatalog(cache_dir="./data/out")
+
+# Optional: use Download Manager for all catalog downloads
+# downloader = DownloadManagerAdapter(cache_dir=DEFAULT_CACHE_DIR, backend="requests")
+# client_catalog = ClientCatalog(cache_dir="./data/out", downloader=downloader)
+```
+
 ---
 
 ## API Reference
