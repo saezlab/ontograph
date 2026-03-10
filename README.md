@@ -36,7 +36,8 @@ from ontograph.config.settings import DEFAULT_CACHE_DIR
 # Instantiate a client for your catalog
 client_catalog = ClientCatalog(cache_dir="./data/out")
 
-# Optional: choose a downloader adapter explicitly
+# Optional: choose downloader via string or adapter (client-level only)
+# client_catalog = ClientCatalog(cache_dir="./data/out", downloader="download_manager")
 # downloader = DownloadManagerAdapter(cache_dir=DEFAULT_CACHE_DIR, backend="requests")
 # client_catalog = ClientCatalog(cache_dir="./data/out", downloader=downloader)
 
@@ -71,7 +72,8 @@ client_dummy_ontology = ClientOntology(cache_dir="./data/out")
 # Load a dummy ontology, we prepare a simple one to try out this package.
 client_dummy_ontology.load(source="./tests/resources/dummy_ontology.obo")
 
-# Optional: choose a downloader adapter explicitly
+# Optional: choose downloader via string or adapter (client-level only)
+# client_dummy_ontology = ClientOntology(cache_dir="./data/out", downloader="pooch")
 # downloader = DownloadManagerAdapter(cache_dir=DEFAULT_CACHE_DIR, backend="requests")
 # client_dummy_ontology = ClientOntology(cache_dir="./data/out", downloader=downloader)
 ```
@@ -158,6 +160,7 @@ client_go.load(source="go")
 By default, the project uses a configurable downloader backend. You can set a global default in `ontograph/config/settings.py`:
 
 ```python
+# Used as the fallback when no downloader is provided
 DEFAULT_DOWNLOADER = "pooch"
 # or
 DEFAULT_DOWNLOADER = "download_manager"
