@@ -70,6 +70,12 @@ class CatalogOntologies:
         if downloader is None:
             downloader = get_default_downloader(cache_dir=self.cache_dir)
 
+        logger.info(
+            'Downloading OBO Foundry registry using %s: %s',
+            type(downloader).__name__,
+            OBO_FOUNDRY_REGISTRY_URL,
+        )
+        logger.debug('Catalog file path: %s', catalog_path)
         downloader.fetch_from_url(
             url_ontology=OBO_FOUNDRY_REGISTRY_URL,
             filename=NAME_OBO_FOUNDRY_CATALOG,

@@ -362,6 +362,10 @@ class ClientOntology:
             >>> client.load(source="./tests/resources/dummy_ontology.obo")
         """
         logger.info(f'Loading ontology from source: {source} ...')
+        logger.debug(
+            'Using downloader: %s',
+            type(downloader).__name__ if downloader else 'default',
+        )
         loader = ProntoLoaderAdapter(
             cache_dir=self._cache_dir, downloader=self._downloader
         )
@@ -371,6 +375,7 @@ class ClientOntology:
 
         # 1. Case 1: Local file exists
         if path.exists():
+            logger.debug('Resolved source type: file')
             logger.info(
                 f'Found local file at {path}, loading with ProntoLoaderAdapter...'
             )
@@ -378,6 +383,7 @@ class ClientOntology:
 
         # 2. Case 2: Provided source is a URL
         elif re.match(r'^https?://', source):
+            logger.debug('Resolved source type: url')
             logger.info(
                 f'Detected URL source, downloading ontology from {source}'
             )
@@ -386,6 +392,7 @@ class ClientOntology:
 
         # 3. Case 3: Try OBO catalog (if file missing or simple ID)
         else:
+            logger.debug('Resolved source type: catalog')
             catalog_client = ClientCatalog(
                 cache_dir=self._cache_dir,
                 downloader=self._downloader,

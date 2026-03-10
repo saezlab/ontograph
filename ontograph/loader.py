@@ -286,6 +286,9 @@ class ProntoLoaderAdapter(OntologyLoaderPort):
                 pronto_pool._ThreadPool = None
             except (AttributeError, ImportError):
                 pass
+            logger.warning(
+                'Pronto ThreadPool disabled due to PermissionError; retrying without multiprocessing'
+            )
             ontology = pronto.Ontology(
                 fixed_path, encoding=self.find_file_encoding(fixed_path)
             )
@@ -411,6 +414,12 @@ class ProntoLoaderAdapter(OntologyLoaderPort):
                 f'Created default downloader: {type(downloader).__name__}'
             )
 
+        logger.info(
+            'Downloading ontology %s.%s using %s (catalog)',
+            name_id,
+            format,
+            type(downloader).__name__,
+        )
         resources = [{'name_id': name_id, 'format': format}]
         try:
             path_download = downloader.fetch_from_catalog(
@@ -515,6 +524,11 @@ class ProntoLoaderAdapter(OntologyLoaderPort):
                 f'Created default downloader: {type(downloader).__name__}'
             )
 
+        logger.info(
+            'Downloading ontology from URL using %s: %s',
+            type(downloader).__name__,
+            url_ontology,
+        )
         file_path: Path = downloader.fetch_from_url(
             url_ontology=url_ontology,
             filename=filename,
