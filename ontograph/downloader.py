@@ -281,7 +281,7 @@ class DownloadManagerAdapter(DownloaderPort):
                 'Install it to use DownloadManagerAdapter.'
             ) from exc
 
-        self._cache_dir = cache_dir
+        self._cache_dir = Path(cache_dir)
         self._cache_dir.mkdir(parents=True, exist_ok=True)
         self._manager = dm.DownloadManager(
             path=str(self._cache_dir),
