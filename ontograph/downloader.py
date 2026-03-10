@@ -127,7 +127,7 @@ class PoochDownloaderAdapter(DownloaderPort):
         Args:
             cache_dir: Directory to store downloaded files
         """
-        self._cache_dir = cache_dir
+        self._cache_dir = Path(cache_dir)
         self._resources_paths: dict[str, Path] = {}
         self._cache_dir.mkdir(parents=True, exist_ok=True)
 
