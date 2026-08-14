@@ -86,7 +86,7 @@ def get_default_downloader(
 
     Args:
         cache_dir: Directory to store downloaded files.
-        backend: Override the configured default ('pooch' or 'download_manager').
+        backend: Override the configured default ('pooch' or 'dlmachine').
     """
     from ontograph.config.settings import DEFAULT_DOWNLOADER
 
@@ -105,7 +105,9 @@ def get_default_downloader(
             cache_dir,
         )
         return PoochDownloaderAdapter(cache_dir=cache_dir)
-    if selection == 'download_manager':
+    # 'dlmachine' is the name the package carries today. 'download_manager' is
+    # the name it had before, and callers still pass it.
+    if selection in ('download_manager', 'dlmachine'):
         logger.debug(
             'Downloader init: %s (cache_dir=%s)',
             DownloadManagerAdapter.__name__,
@@ -114,7 +116,8 @@ def get_default_downloader(
         return DownloadManagerAdapter(cache_dir=cache_dir)
 
     raise ValueError(
-        "Unknown downloader backend. Use 'pooch' or 'download_manager'."
+        "Unknown downloader backend. Use 'pooch', 'dlmachine' or "
+        "'download_manager'."
     )
 
 
@@ -262,7 +265,8 @@ class PoochDownloaderAdapter(DownloaderPort):
 class DownloadManagerAdapter(DownloaderPort):
     """Alternative downloader implementation.
 
-    Adapter for the `download_manager` package by Saezlab.
+    Adapter for the `dlmachine` package by Saezlab, which the download-manager
+    repository publishes under that name.
     """
 
     def __init__(
@@ -276,14 +280,14 @@ class DownloadManagerAdapter(DownloaderPort):
 
         Args:
             cache_dir: Directory to store downloaded files.
-            backend: Backend for download_manager ('requests' or 'curl').
+            backend: Backend for dlmachine ('requests' or 'curl').
             **kwargs: Extra keyword args forwarded to DownloadManager.
         """
         try:
-            import download_manager as dm
+            import dlmachine as dm
         except ModuleNotFoundError as exc:
             raise ModuleNotFoundError(
-                'download_manager is not installed. '
+                'dlmachine is not installed. '
                 'Install it to use DownloadManagerAdapter.'
             ) from exc
 
